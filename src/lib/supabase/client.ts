@@ -11,7 +11,7 @@ export function createClient() {
       auth: {
         // Use a simple non-blocking lock to avoid navigator.locks issues
         // caused by React Strict Mode double-mounting
-        lock: async (name: string, _acquireTimeout: number, fn: () => Promise<unknown>) => {
+        lock: async <R,>(name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => {
           return await fn()
         },
       },
