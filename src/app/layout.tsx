@@ -1,0 +1,30 @@
+import type { Metadata } from "next";
+import { Geist } from "next/font/google";
+import "./globals.css";
+import { AuthProvider } from "@/hooks/useAuth";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  title: "Aqara Distro - 발주·거래 관리 시스템",
+  description: "아카라 스마트 발주·거래 관리 시스템",
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="ko" className={`${geistSans.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col font-sans">
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+      </body>
+    </html>
+  );
+}
