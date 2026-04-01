@@ -19,13 +19,21 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function HQUsersPage() {
   const [users, setUsers] = useState<UserProfile[]>([])
+  const [distributors, setDistributors] = useState<UserProfile[]>([])
   const [loading, setLoading] = useState(true)
   const [roleFilter, setRoleFilter] = useState<string>('all')
   const [processing, setProcessing] = useState<string | null>(null)
+
+  // 총판 배정 모달 상태
+  const [assigningUser, setAssigningUser] = useState<UserProfile | null>(null)
+  const [selectedDistributor, setSelectedDistributor] = useState<string>('')
+  const [assigning, setAssigning] = useState(false)
+
   const supabase = createClient()
 
   useEffect(() => {
     fetchUsers()
+    fetchDistributors()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleFilter])
 
@@ -45,21 +53,68 @@ export default function HQUsersPage() {
     setLoading(false)
   }
 
+  const fetchDistributors = async () => {
+    const { data } = await supabase
+      .from('users_profile')
+      .select('*')
+      .eq('role', 'distributor')
+      .eq('status', 'active')
+      .order('company_name')
+    if (data) setDistributors(data)
+  }
+
   const handleStatusChange = async (userId: string, newStatus: string) => {
     setProcessing(userId)
-    await supabase
+    const { error } = await supabase
       .from('users_profile')
       .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq('id', userId)
 
-    setUsers(users.map(u => u.id === userId ? { ...u, status: newStatus as UserProfile['status'] } : u))
+    if (!error) {
+      setUsers(users.map(u => u.id === userId ? { ...u, status: newStatus as UserProfile['status'] } : u))
+    }
     setProcessing(null)
+  }
+
+  const openAssign = (user: UserProfile) => {
+    setAssigningUser(user)
+    setSelectedDistributor(user.distributor_id || '')
+  }
+
+  const handleAssignDistributor = async () => {
+    if (!assigningUser) return
+    setAssigning(true)
+
+    const { error } = await supabase
+      .from('users_profile')
+      .update({
+        distributor_id: selectedDistributor || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', assigningUser.id)
+
+    if (error) {
+      alert('총판 배정에 실패했습니다.')
+    } else {
+      setUsers(users.map(u =>
+        u.id === assigningUser.id
+          ? { ...u, distributor_id: selectedDistributor || null }
+          : u
+      ))
+      setAssigningUser(null)
+    }
+    setAssigning(false)
+  }
+
+  const getDistributorName = (distributorId: string | null) => {
+    if (!distributorId) return null
+    return distributors.find(d => d.id === distributorId)?.company_name || null
   }
 
   const SanctionButtons = ({ user }: { user: UserProfile }) => {
     if (user.role === 'hq') return null
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1 flex-wrap">
         {user.status !== 'active' && (
           <button
             onClick={() => handleStatusChange(user.id, 'active')}
@@ -132,8 +187,9 @@ export default function HQUsersPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">담당자</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">역할</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">연락처</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">담당 총판</th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">상태</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">제재</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">관리</th>
                 </tr>
               </thead>
               <tbody>
@@ -145,6 +201,23 @@ export default function HQUsersPage() {
                       <span className="text-xs text-gray-500">{ROLE_LABELS[user.role]}</span>
                     </td>
                     <td className="px-6 py-3 text-sm text-gray-500">{user.phone || '-'}</td>
+                    <td className="px-6 py-3 text-sm">
+                      {user.role === 'retailer' ? (
+                        <div className="flex items-center gap-2">
+                          <span className={user.distributor_id ? 'text-gray-700' : 'text-orange-500 text-xs'}>
+                            {getDistributorName(user.distributor_id) || '미배정'}
+                          </span>
+                          <button
+                            onClick={() => openAssign(user)}
+                            className="text-xs text-blue-600 hover:underline"
+                          >
+                            배정
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
+                      )}
+                    </td>
                     <td className="px-6 py-3 text-center">
                       <span className={cn(
                         'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
@@ -174,13 +247,27 @@ export default function HQUsersPage() {
                       {STATUS_LABELS[user.status]}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
                     <span>{user.contact_name || '-'}</span>
                     <span>·</span>
                     <span>{ROLE_LABELS[user.role]}</span>
                     <span>·</span>
                     <span>{user.phone || '-'}</span>
                   </div>
+                  {user.role === 'retailer' && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-500">총판:</span>
+                      <span className={user.distributor_id ? 'text-gray-700' : 'text-orange-500 text-xs'}>
+                        {getDistributorName(user.distributor_id) || '미배정'}
+                      </span>
+                      <button
+                        onClick={() => openAssign(user)}
+                        className="text-xs text-blue-600 hover:underline"
+                      >
+                        배정
+                      </button>
+                    </div>
+                  )}
                   <SanctionButtons user={user} />
                 </div>
               ))}
@@ -219,6 +306,45 @@ export default function HQUsersPage() {
           </div>
         </dl>
       </div>
+
+      {/* 총판 배정 모달 */}
+      {assigningUser && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">총판 배정</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              <strong>{assigningUser.company_name}</strong> 의 담당 총판을 선택하세요.
+            </p>
+
+            <select
+              value={selectedDistributor}
+              onChange={(e) => setSelectedDistributor(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-4"
+            >
+              <option value="">미배정</option>
+              {distributors.map((d) => (
+                <option key={d.id} value={d.id}>{d.company_name}</option>
+              ))}
+            </select>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleAssignDistributor}
+                disabled={assigning}
+                className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+              >
+                {assigning ? '저장 중...' : '저장'}
+              </button>
+              <button
+                onClick={() => setAssigningUser(null)}
+                className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
