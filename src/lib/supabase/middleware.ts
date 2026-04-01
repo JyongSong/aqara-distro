@@ -27,12 +27,13 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 未登录时重定向到登录页（/register 页面除外）
+  // 未登录时重定向到登录页（/register 페이지 및 /api/ 라우트 제외）
   const isLoginPage = request.nextUrl.pathname === '/login'
   const isRootPage = request.nextUrl.pathname === '/'
   const isRegisterPage = request.nextUrl.pathname === '/register'
+  const isApiRoute = request.nextUrl.pathname.startsWith('/api/')
 
-  if (!user && !isLoginPage && !isRegisterPage) {
+  if (!user && !isLoginPage && !isRegisterPage && !isApiRoute) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
