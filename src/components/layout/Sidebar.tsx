@@ -54,7 +54,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const items = NAV_ITEMS[profile.role] || []
 
   const sidebarContent = (
-    <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
+    <aside className="w-64 bg-white border-r border-gray-200 h-full flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-gray-200 flex items-center justify-between">
         <div>
@@ -83,7 +83,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
         {items.map((item) => (
           <Link
             key={item.href}
