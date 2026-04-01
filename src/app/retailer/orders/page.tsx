@@ -39,21 +39,21 @@ export default function RetailerOrdersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">발주 목록</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">발주 목록</h1>
           <p className="text-sm text-gray-500 mt-1">나의 발주 내역을 확인합니다</p>
         </div>
         <Link
           href="/retailer/orders/new"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
         >
           + 새 발주
         </Link>
       </div>
 
       {/* 필터 */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         {['all', 'SUBMITTED', 'APPROVED', 'SHIPPED', 'DELIVERED', 'COMPLETED'].map((status) => (
           <button
             key={status}
@@ -77,39 +77,63 @@ export default function RetailerOrdersPage() {
         ) : orders.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-400 text-sm">발주 내역이 없습니다.</div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">주문번호</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">상태</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">공급가액</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">발주일</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">희망납기</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop table */}
+            <table className="w-full hidden sm:table">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">주문번호</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">상태</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">공급가액</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">발주일</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">희망납기</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-6 py-3">
+                      <Link href={`/retailer/orders/${order.id}`} className="text-sm text-blue-600 hover:underline">
+                        {order.order_number}
+                      </Link>
+                    </td>
+                    <td className="px-6 py-3">
+                      <span className={cn(
+                        'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
+                        ORDER_STATUS_COLORS[order.status]
+                      )}>
+                        {ORDER_STATUS_LABELS[order.status]}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3 text-right text-sm text-gray-900">{formatKRW(order.retailer_total)}</td>
+                    <td className="px-6 py-3 text-sm text-gray-500">{formatDateTime(order.created_at)}</td>
+                    <td className="px-6 py-3 text-sm text-gray-500">{order.desired_date || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Mobile cards */}
+            <div className="sm:hidden divide-y divide-gray-100">
               {orders.map((order) => (
-                <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-6 py-3">
-                    <Link href={`/retailer/orders/${order.id}`} className="text-sm text-blue-600 hover:underline">
-                      {order.order_number}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-3">
+                <Link key={order.id} href={`/retailer/orders/${order.id}`} className="block p-4 active:bg-gray-50">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-mono text-blue-600">{order.order_number}</span>
                     <span className={cn(
                       'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                       ORDER_STATUS_COLORS[order.status]
                     )}>
                       {ORDER_STATUS_LABELS[order.status]}
                     </span>
-                  </td>
-                  <td className="px-6 py-3 text-right text-sm text-gray-900">{formatKRW(order.retailer_total)}</td>
-                  <td className="px-6 py-3 text-sm text-gray-500">{formatDateTime(order.created_at)}</td>
-                  <td className="px-6 py-3 text-sm text-gray-500">{order.desired_date || '-'}</td>
-                </tr>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">{formatDateTime(order.created_at)}</span>
+                    <span className="font-medium text-gray-900">{formatKRW(order.retailer_total)}</span>
+                  </div>
+                </Link>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
     </div>

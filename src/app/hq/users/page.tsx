@@ -56,10 +56,45 @@ export default function HQUsersPage() {
     setProcessing(null)
   }
 
+  const SanctionButtons = ({ user }: { user: UserProfile }) => {
+    if (user.role === 'hq') return null
+    return (
+      <div className="flex items-center gap-1">
+        {user.status !== 'active' && (
+          <button
+            onClick={() => handleStatusChange(user.id, 'active')}
+            disabled={processing === user.id}
+            className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 disabled:opacity-50"
+          >
+            해제
+          </button>
+        )}
+        {user.status !== 'restricted' && (
+          <button
+            onClick={() => handleStatusChange(user.id, 'restricted')}
+            disabled={processing === user.id}
+            className="px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 disabled:opacity-50"
+          >
+            제한
+          </button>
+        )}
+        {user.status !== 'suspended' && (
+          <button
+            onClick={() => handleStatusChange(user.id, 'suspended')}
+            disabled={processing === user.id}
+            className="px-2 py-1 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 disabled:opacity-50"
+          >
+            정지
+          </button>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">사용자 관리</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">사용자 관리</h1>
         <p className="text-sm text-gray-500 mt-1">소매점·총판 관리 및 제재 설정</p>
       </div>
 
@@ -88,80 +123,78 @@ export default function HQUsersPage() {
         ) : users.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-400 text-sm">사용자가 없습니다.</div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">회사명</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">담당자</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">역할</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">연락처</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">상태</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">제재</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop table */}
+            <table className="w-full hidden lg:table">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">회사명</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">담당자</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">역할</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">연락처</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">상태</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">제재</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-6 py-3 text-sm font-medium text-gray-900">{user.company_name}</td>
+                    <td className="px-6 py-3 text-sm text-gray-600">{user.contact_name || '-'}</td>
+                    <td className="px-6 py-3">
+                      <span className="text-xs text-gray-500">{ROLE_LABELS[user.role]}</span>
+                    </td>
+                    <td className="px-6 py-3 text-sm text-gray-500">{user.phone || '-'}</td>
+                    <td className="px-6 py-3 text-center">
+                      <span className={cn(
+                        'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
+                        STATUS_COLORS[user.status]
+                      )}>
+                        {STATUS_LABELS[user.status]}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <SanctionButtons user={user} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Mobile cards */}
+            <div className="lg:hidden divide-y divide-gray-100">
               {users.map((user) => (
-                <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-6 py-3 text-sm font-medium text-gray-900">{user.company_name}</td>
-                  <td className="px-6 py-3 text-sm text-gray-600">{user.contact_name || '-'}</td>
-                  <td className="px-6 py-3">
-                    <span className="text-xs text-gray-500">{ROLE_LABELS[user.role]}</span>
-                  </td>
-                  <td className="px-6 py-3 text-sm text-gray-500">{user.phone || '-'}</td>
-                  <td className="px-6 py-3 text-center">
+                <div key={user.id} className="p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-900">{user.company_name}</span>
                     <span className={cn(
                       'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                       STATUS_COLORS[user.status]
                     )}>
                       {STATUS_LABELS[user.status]}
                     </span>
-                  </td>
-                  <td className="px-6 py-3 text-center">
-                    {user.role !== 'hq' && (
-                      <div className="flex items-center justify-center gap-1">
-                        {user.status !== 'active' && (
-                          <button
-                            onClick={() => handleStatusChange(user.id, 'active')}
-                            disabled={processing === user.id}
-                            className="px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 disabled:opacity-50"
-                          >
-                            해제
-                          </button>
-                        )}
-                        {user.status !== 'restricted' && (
-                          <button
-                            onClick={() => handleStatusChange(user.id, 'restricted')}
-                            disabled={processing === user.id}
-                            className="px-2 py-1 text-xs bg-orange-50 text-orange-700 rounded hover:bg-orange-100 disabled:opacity-50"
-                          >
-                            제한
-                          </button>
-                        )}
-                        {user.status !== 'suspended' && (
-                          <button
-                            onClick={() => handleStatusChange(user.id, 'suspended')}
-                            disabled={processing === user.id}
-                            className="px-2 py-1 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 disabled:opacity-50"
-                          >
-                            정지
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </td>
-                </tr>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <span>{user.contact_name || '-'}</span>
+                    <span>·</span>
+                    <span>{ROLE_LABELS[user.role]}</span>
+                    <span>·</span>
+                    <span>{user.phone || '-'}</span>
+                  </div>
+                  <SanctionButtons user={user} />
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
 
       {/* 제재 기준 안내 */}
-      <div className="mt-6 bg-gray-50 rounded-xl border border-gray-200 p-6">
+      <div className="mt-6 bg-gray-50 rounded-xl border border-gray-200 p-4 sm:p-6">
         <h3 className="text-sm font-semibold text-gray-900 mb-3">제재 기준</h3>
         <dl className="space-y-2 text-sm">
           <div className="flex gap-4">
-            <dt className="w-20">
+            <dt className="w-20 flex-shrink-0">
               <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS.active)}>
                 정상
               </span>
@@ -169,7 +202,7 @@ export default function HQUsersPage() {
             <dd className="text-gray-600">모든 기능 이용 가능</dd>
           </div>
           <div className="flex gap-4">
-            <dt className="w-20">
+            <dt className="w-20 flex-shrink-0">
               <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS.restricted)}>
                 제한
               </span>
@@ -177,7 +210,7 @@ export default function HQUsersPage() {
             <dd className="text-gray-600">로그인 가능, 신규 주문 불가</dd>
           </div>
           <div className="flex gap-4">
-            <dt className="w-20">
+            <dt className="w-20 flex-shrink-0">
               <span className={cn('inline-flex px-2 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS.suspended)}>
                 정지
               </span>

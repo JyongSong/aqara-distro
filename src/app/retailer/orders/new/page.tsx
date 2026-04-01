@@ -209,15 +209,15 @@ export default function NewOrderPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">새 발주 작성</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">새 발주 작성</h1>
         <p className="text-sm text-gray-500 mt-1">상품을 선택하고 수량을 입력하세요</p>
       </div>
 
       {/* 상품 추가 섹션 */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">상품 선택</h2>
-        <div className="grid grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">상품</label>
             <select
@@ -282,9 +282,11 @@ export default function NewOrderPage() {
 
       {/* 발주 품목 목록 */}
       {lines.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">발주 품목</h2>
-          <table className="w-full mb-4">
+
+          {/* Desktop table */}
+          <table className="w-full mb-4 hidden sm:table">
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="pb-2 text-left text-xs font-medium text-gray-500">상품</th>
@@ -309,6 +311,22 @@ export default function NewOrderPage() {
             </tbody>
           </table>
 
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-3 mb-4">
+            {lines.map((line, i) => (
+              <div key={i} className="border border-gray-100 rounded-lg p-3">
+                <div className="flex items-start justify-between mb-1">
+                  <span className="text-sm font-medium text-gray-900">{line.product_name}</span>
+                  <button onClick={() => removeLine(i)} className="text-red-500 text-xs hover:underline ml-2">삭제</button>
+                </div>
+                <div className="flex justify-between text-sm text-gray-500">
+                  <span>{formatKRW(line.unit_price)} × {line.quantity}</span>
+                  <span className="font-medium text-gray-900">{formatKRW(line.amount)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
           {/* 합계 */}
           <div className="border-t border-gray-200 pt-4 space-y-2">
             <div className="flex justify-between text-sm">
@@ -329,9 +347,9 @@ export default function NewOrderPage() {
 
       {/* 배송 정보 */}
       {lines.length > 0 && !showPreview && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">배송 정보</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">배송지</label>
               <input
@@ -367,11 +385,11 @@ export default function NewOrderPage() {
 
       {/* 발주 버튼 */}
       {lines.length > 0 && (
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           {!showPreview ? (
             <button
               onClick={() => setShowPreview(true)}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+              className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 text-center"
             >
               발주 미리보기
             </button>
@@ -380,13 +398,13 @@ export default function NewOrderPage() {
               <button
                 onClick={handleSubmit}
                 disabled={saving}
-                className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50"
+                className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 text-center"
               >
                 {saving ? '발주 중...' : '발주 확정'}
               </button>
               <button
                 onClick={() => setShowPreview(false)}
-                className="px-8 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200"
+                className="px-8 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 text-center"
               >
                 수정
               </button>

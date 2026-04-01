@@ -57,7 +57,7 @@ export default function HQDashboard() {
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <p className="text-sm text-gray-500">전체 주문</p>
           <p className="text-3xl font-bold text-gray-900 mt-2">{stats.totalOrders}</p>
@@ -77,7 +77,7 @@ export default function HQDashboard() {
       </div>
 
       {/* 빠른 링크 */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Link href="/hq/orders" className="bg-white rounded-xl border border-gray-200 p-6 hover:border-blue-300 transition-colors">
           <h3 className="font-semibold text-gray-900">주문 관리</h3>
           <p className="text-sm text-gray-500 mt-1">전체 주문 현황 확인 및 출고 처리</p>

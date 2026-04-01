@@ -69,8 +69,8 @@ export default function HQOrdersPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">주문 관리</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">주문 관리</h1>
         <p className="text-sm text-gray-500 mt-1">전체 주문 현황 확인 및 출고 처리</p>
       </div>
 
@@ -99,63 +99,107 @@ export default function HQOrdersPage() {
         ) : orders.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-400 text-sm">해당하는 주문이 없습니다.</div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">주문번호</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">소매점</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">총판</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">상태</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">소매금액</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">본사금액</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">발주일</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">처리</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop table */}
+            <table className="w-full hidden lg:table">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">주문번호</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">소매점</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">총판</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">상태</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">소매금액</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">본사금액</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">발주일</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">처리</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => {
+                  const action = getNextAction(order.status)
+                  return (
+                    <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <Link href={`/hq/orders/${order.id}`} className="text-sm font-mono text-blue-600 hover:underline">
+                          {order.order_number}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{order.retailer?.company_name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{order.distributor?.company_name}</td>
+                      <td className="px-4 py-3">
+                        <span className={cn(
+                          'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
+                          ORDER_STATUS_COLORS[order.status]
+                        )}>
+                          {ORDER_STATUS_LABELS[order.status]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm text-gray-900">{formatKRW(order.retailer_total)}</td>
+                      <td className="px-4 py-3 text-right text-sm text-blue-600">
+                        {order.hq_total ? formatKRW(order.hq_total) : '-'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{formatDateTime(order.created_at)}</td>
+                      <td className="px-4 py-3 text-center">
+                        {action && (
+                          <button
+                            onClick={() => handleStatusChange(order.id, action.nextStatus)}
+                            disabled={processing === order.id}
+                            className={cn(
+                              'px-3 py-1 text-white rounded text-xs font-medium disabled:opacity-50',
+                              action.color
+                            )}
+                          >
+                            {processing === order.id ? '...' : action.label}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+
+            {/* Mobile cards */}
+            <div className="lg:hidden divide-y divide-gray-100">
               {orders.map((order) => {
                 const action = getNextAction(order.status)
                 return (
-                  <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="px-4 py-3">
+                  <div key={order.id} className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
                       <Link href={`/hq/orders/${order.id}`} className="text-sm font-mono text-blue-600 hover:underline">
                         {order.order_number}
                       </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">{order.retailer?.company_name}</td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{order.distributor?.company_name}</td>
-                    <td className="px-4 py-3">
                       <span className={cn(
                         'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                         ORDER_STATUS_COLORS[order.status]
                       )}>
                         {ORDER_STATUS_LABELS[order.status]}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-right text-sm text-gray-900">{formatKRW(order.retailer_total)}</td>
-                    <td className="px-4 py-3 text-right text-sm text-blue-600">
-                      {order.hq_total ? formatKRW(order.hq_total) : '-'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{formatDateTime(order.created_at)}</td>
-                    <td className="px-4 py-3 text-center">
-                      {action && (
-                        <button
-                          onClick={() => handleStatusChange(order.id, action.nextStatus)}
-                          disabled={processing === order.id}
-                          className={cn(
-                            'px-3 py-1 text-white rounded text-xs font-medium disabled:opacity-50',
-                            action.color
-                          )}
-                        >
-                          {processing === order.id ? '...' : action.label}
-                        </button>
-                      )}
-                    </td>
-                  </tr>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">{order.retailer?.company_name} → {order.distributor?.company_name}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">{formatDateTime(order.created_at)}</span>
+                      <span className="font-medium text-gray-900">{formatKRW(order.retailer_total)}</span>
+                    </div>
+                    {action && (
+                      <button
+                        onClick={() => handleStatusChange(order.id, action.nextStatus)}
+                        disabled={processing === order.id}
+                        className={cn(
+                          'w-full px-3 py-2 text-white rounded-lg text-sm font-medium disabled:opacity-50',
+                          action.color
+                        )}
+                      >
+                        {processing === order.id ? '처리 중...' : action.label}
+                      </button>
+                    )}
+                  </div>
                 )
               })}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
     </div>

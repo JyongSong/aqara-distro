@@ -34,14 +34,18 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
 
 function isActiveLink(pathname: string, href: string, allItems: NavItem[]): boolean {
   if (pathname === href) return true
-  // Check if a more specific nav item matches — if so, this one shouldn't be active
   const moreSpecificMatch = allItems.some(
     other => other.href !== href && other.href.startsWith(href) && pathname.startsWith(other.href)
   )
   return pathname.startsWith(href) && !moreSpecificMatch
 }
 
-export default function Sidebar() {
+interface SidebarProps {
+  open: boolean
+  onClose: () => void
+}
+
+export default function Sidebar({ open, onClose }: SidebarProps) {
   const { profile, signOut } = useAuth()
   const pathname = usePathname()
 
@@ -49,12 +53,24 @@ export default function Sidebar() {
 
   const items = NAV_ITEMS[profile.role] || []
 
-  return (
+  const sidebarContent = (
     <aside className="w-64 bg-white border-r border-gray-200 min-h-screen flex flex-col">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">Aqara Distro</h1>
-        <p className="text-sm text-gray-500 mt-1">발주·거래 관리 시스템</p>
+      <div className="p-6 border-b border-gray-200 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">Aqara Distro</h1>
+          <p className="text-sm text-gray-500 mt-1">발주·거래 관리 시스템</p>
+        </div>
+        {/* Mobile close button */}
+        <button
+          onClick={onClose}
+          className="lg:hidden p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+          aria-label="Close menu"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       {/* User Info */}
@@ -72,6 +88,7 @@ export default function Sidebar() {
           <Link
             key={item.href}
             href={item.href}
+            onClick={onClose}
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
               isActiveLink(pathname, item.href, items)
@@ -96,5 +113,24 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+  )
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <div className="hidden lg:block flex-shrink-0">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile overlay */}
+      {open && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div className="fixed inset-0 bg-black/50" onClick={onClose} />
+          <div className="fixed inset-y-0 left-0 z-50 animate-slide-in">
+            {sidebarContent}
+          </div>
+        </div>
+      )}
+    </>
   )
 }

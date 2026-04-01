@@ -39,13 +39,13 @@ export default function DistributorOrdersPage() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">발주 관리</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">발주 관리</h1>
         <p className="text-sm text-gray-500 mt-1">소매점 발주 승인 및 관리</p>
       </div>
 
       {/* 필터 */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 flex-wrap">
         {['all', 'SUBMITTED', 'APPROVED', 'REJECTED', 'SHIPPED', 'COMPLETED'].map((status) => (
           <button
             key={status}
@@ -69,45 +69,70 @@ export default function DistributorOrdersPage() {
         ) : orders.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-400 text-sm">해당하는 주문이 없습니다.</div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">주문번호</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">소매점</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">상태</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">소매 금액</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">본사 금액</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">발주일</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">처리</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop table */}
+            <table className="w-full hidden lg:table">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">주문번호</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">소매점</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">상태</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">소매 금액</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">본사 금액</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">발주일</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">처리</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-6 py-3 text-sm text-gray-900">{order.order_number}</td>
+                    <td className="px-6 py-3 text-sm text-gray-900">{order.retailer?.company_name}</td>
+                    <td className="px-6 py-3">
+                      <span className={cn(
+                        'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
+                        ORDER_STATUS_COLORS[order.status]
+                      )}>
+                        {ORDER_STATUS_LABELS[order.status]}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3 text-right text-sm text-gray-900">{formatKRW(order.retailer_total)}</td>
+                    <td className="px-6 py-3 text-right text-sm text-gray-500">
+                      {order.hq_total ? formatKRW(order.hq_total) : '-'}
+                    </td>
+                    <td className="px-6 py-3 text-sm text-gray-500">{formatDateTime(order.created_at)}</td>
+                    <td className="px-6 py-3 text-center">
+                      <Link href={`/distributor/orders/${order.id}`} className="text-sm text-blue-600 hover:underline">
+                        상세
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Mobile cards */}
+            <div className="lg:hidden divide-y divide-gray-100">
               {orders.map((order) => (
-                <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-6 py-3 text-sm text-gray-900">{order.order_number}</td>
-                  <td className="px-6 py-3 text-sm text-gray-900">{order.retailer?.company_name}</td>
-                  <td className="px-6 py-3">
+                <Link key={order.id} href={`/distributor/orders/${order.id}`} className="block p-4 active:bg-gray-50">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-sm font-medium text-gray-900">{order.order_number}</span>
                     <span className={cn(
                       'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                       ORDER_STATUS_COLORS[order.status]
                     )}>
                       {ORDER_STATUS_LABELS[order.status]}
                     </span>
-                  </td>
-                  <td className="px-6 py-3 text-right text-sm text-gray-900">{formatKRW(order.retailer_total)}</td>
-                  <td className="px-6 py-3 text-right text-sm text-gray-500">
-                    {order.hq_total ? formatKRW(order.hq_total) : '-'}
-                  </td>
-                  <td className="px-6 py-3 text-sm text-gray-500">{formatDateTime(order.created_at)}</td>
-                  <td className="px-6 py-3 text-center">
-                    <Link href={`/distributor/orders/${order.id}`} className="text-sm text-blue-600 hover:underline">
-                      상세
-                    </Link>
-                  </td>
-                </tr>
+                  </div>
+                  <div className="text-sm text-gray-500 mb-1">{order.retailer?.company_name}</div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">{formatDateTime(order.created_at)}</span>
+                    <span className="font-medium text-gray-900">{formatKRW(order.retailer_total)}</span>
+                  </div>
+                </Link>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
     </div>

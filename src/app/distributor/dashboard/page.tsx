@@ -58,15 +58,15 @@ export default function DistributorDashboard() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">총판 대시보드</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">총판 대시보드</h1>
         <p className="text-sm text-gray-500 mt-1">
           {profile?.company_name} 발주 관리 현황
         </p>
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
         <div className="bg-white rounded-xl border border-orange-200 p-6">
           <p className="text-sm text-gray-500">승인 대기</p>
           <p className="text-3xl font-bold text-orange-600 mt-2">{stats.pending}</p>
