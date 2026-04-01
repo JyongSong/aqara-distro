@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { Order, OrderItem, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
-import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn } from '@/lib/utils'
+import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn, escapeHtml } from '@/lib/utils'
 import Link from 'next/link'
 import { use } from 'react'
 
@@ -44,7 +44,7 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
 
   const handleConfirmDelivery = async () => {
     if (!order) return
-    await supabase
+    const { error } = await supabase
       .from('orders')
       .update({
         status: 'DELIVERED',
@@ -52,6 +52,10 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
       })
       .eq('id', order.id)
 
+    if (error) {
+      alert('수령 확인에 실패했습니다. 다시 시도해 주세요.')
+      return
+    }
     setOrder({ ...order, status: 'DELIVERED', delivered_at: new Date().toISOString() })
   }
 
@@ -65,8 +69,8 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
 
     const rows = items.map(item => `
       <tr>
-        <td style="border:1px solid #ccc;padding:6px;text-align:left">${item.product?.name || ''}</td>
-        <td style="border:1px solid #ccc;padding:6px;text-align:center">${item.option_code || '-'}</td>
+        <td style="border:1px solid #ccc;padding:6px;text-align:left">${escapeHtml(item.product?.name || '')}</td>
+        <td style="border:1px solid #ccc;padding:6px;text-align:center">${escapeHtml(item.option_code || '-')}</td>
         <td style="border:1px solid #ccc;padding:6px;text-align:right">${item.quantity}</td>
         <td style="border:1px solid #ccc;padding:6px;text-align:right">${formatKRW(item.retailer_unit_price)}</td>
         <td style="border:1px solid #ccc;padding:6px;text-align:right">${formatKRW(item.retailer_amount)}</td>
@@ -74,7 +78,7 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
     `).join('')
 
     w.document.write(`
-      <html><head><title>거래명세서 - ${order.order_number}</title>
+      <html><head><title>거래명세서 - ${escapeHtml(order.order_number)}</title>
       <style>body{font-family:'Malgun Gothic',sans-serif;margin:40px;font-size:13px}
       table{border-collapse:collapse;width:100%}
       h1{text-align:center;margin-bottom:24px;font-size:20px}
@@ -85,9 +89,9 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
       <body>
         <h1>거래명세서</h1>
         <div class="info">
-          <div><strong>주문번호:</strong> ${order.order_number}<br>
+          <div><strong>주문번호:</strong> ${escapeHtml(order.order_number)}<br>
           <strong>발주일:</strong> ${formatDate(order.created_at)}<br>
-          <strong>배송지:</strong> ${order.shipping_address || '-'}</div>
+          <strong>배송지:</strong> ${escapeHtml(order.shipping_address || '-')}</div>
         </div>
         <table>
           <thead><tr>

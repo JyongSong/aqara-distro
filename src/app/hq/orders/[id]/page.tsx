@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Order, OrderItem, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
-import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn } from '@/lib/utils'
+import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn, escapeHtml } from '@/lib/utils'
 import Link from 'next/link'
 import { use } from 'react'
 
@@ -49,7 +49,12 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
     const updateData: Record<string, unknown> = { status: newStatus }
     if (newStatus === 'SHIPPED') updateData.shipped_at = new Date().toISOString()
 
-    await supabase.from('orders').update(updateData).eq('id', order.id)
+    const { error } = await supabase.from('orders').update(updateData).eq('id', order.id)
+    if (error) {
+      alert('상태 변경에 실패했습니다. 다시 시도해 주세요.')
+      setProcessing(false)
+      return
+    }
     setOrder({ ...order, status: newStatus as Order['status'] })
     setProcessing(false)
   }
@@ -69,8 +74,8 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
       const amount = isRetailer ? item.retailer_amount : (item.hq_amount || 0)
       return `
         <tr>
-          <td style="border:1px solid #ccc;padding:6px;text-align:left">${item.product?.name || ''}</td>
-          <td style="border:1px solid #ccc;padding:6px;text-align:center">${item.option_code || '-'}</td>
+          <td style="border:1px solid #ccc;padding:6px;text-align:left">${escapeHtml(item.product?.name || '')}</td>
+          <td style="border:1px solid #ccc;padding:6px;text-align:center">${escapeHtml(item.option_code || '-')}</td>
           <td style="border:1px solid #ccc;padding:6px;text-align:right">${item.quantity}</td>
           <td style="border:1px solid #ccc;padding:6px;text-align:right">${formatKRW(price)}</td>
           <td style="border:1px solid #ccc;padding:6px;text-align:right">${formatKRW(amount)}</td>
@@ -79,11 +84,11 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
     }).join('')
 
     const parties = isRetailer
-      ? `<strong>공급자:</strong> ${order.distributor?.company_name}<br><strong>수급자:</strong> ${order.retailer?.company_name}`
-      : `<strong>공급자:</strong> 아카라라이프 본사<br><strong>수급자:</strong> ${order.distributor?.company_name}`
+      ? `<strong>공급자:</strong> ${escapeHtml(order.distributor?.company_name || '')}<br><strong>수급자:</strong> ${escapeHtml(order.retailer?.company_name || '')}`
+      : `<strong>공급자:</strong> 아카라라이프 본사<br><strong>수급자:</strong> ${escapeHtml(order.distributor?.company_name || '')}`
 
     w.document.write(`
-      <html><head><title>${title} - ${order.order_number}</title>
+      <html><head><title>${escapeHtml(title)} - ${escapeHtml(order.order_number)}</title>
       <style>body{font-family:'Malgun Gothic',sans-serif;margin:40px;font-size:13px}
       table{border-collapse:collapse;width:100%}
       h1{text-align:center;margin-bottom:24px;font-size:20px}
@@ -92,10 +97,10 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
       .totals{margin-top:16px;text-align:right}
       @media print{body{margin:20mm}}</style></head>
       <body>
-        <h1>${title}</h1>
+        <h1>${escapeHtml(title)}</h1>
         <div class="info">
           <div>${parties}<br>
-          <strong>주문번호:</strong> ${order.order_number}<br>
+          <strong>주문번호:</strong> ${escapeHtml(order.order_number)}<br>
           <strong>발주일:</strong> ${formatDate(order.created_at)}</div>
         </div>
         <table>

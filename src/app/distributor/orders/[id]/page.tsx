@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { Order, OrderItem, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
-import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn } from '@/lib/utils'
+import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn, escapeHtml } from '@/lib/utils'
 import Link from 'next/link'
 import { use } from 'react'
 
@@ -84,7 +84,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
     }
 
     // 주문 상태 업데이트
-    await supabase
+    const { error: orderError } = await supabase
       .from('orders')
       .update({
         status: 'APPROVED',
@@ -93,6 +93,12 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
         approved_by: profile.id,
       })
       .eq('id', order.id)
+
+    if (orderError) {
+      alert('승인 처리에 실패했습니다. 다시 시도해 주세요.')
+      setProcessing(false)
+      return
+    }
 
     // 상태 갱신
     setOrder({
@@ -112,7 +118,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
     if (!order) return
     setProcessing(true)
 
-    await supabase
+    const { error } = await supabase
       .from('orders')
       .update({
         status: 'REJECTED',
@@ -120,6 +126,11 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       })
       .eq('id', order.id)
 
+    if (error) {
+      alert('반려 처리에 실패했습니다. 다시 시도해 주세요.')
+      setProcessing(false)
+      return
+    }
     setOrder({ ...order, status: 'REJECTED' })
     setProcessing(false)
   }
@@ -139,8 +150,8 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       const amount = isRetailer ? item.retailer_amount : (item.hq_amount || 0)
       return `
         <tr>
-          <td style="border:1px solid #ccc;padding:6px">${item.product?.name || ''}</td>
-          <td style="border:1px solid #ccc;padding:6px;text-align:center">${item.option_code || '-'}</td>
+          <td style="border:1px solid #ccc;padding:6px">${escapeHtml(item.product?.name || '')}</td>
+          <td style="border:1px solid #ccc;padding:6px;text-align:center">${escapeHtml(item.option_code || '-')}</td>
           <td style="border:1px solid #ccc;padding:6px;text-align:right">${item.quantity}</td>
           <td style="border:1px solid #ccc;padding:6px;text-align:right">${formatKRW(price)}</td>
           <td style="border:1px solid #ccc;padding:6px;text-align:right">${formatKRW(amount)}</td>
@@ -149,15 +160,15 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
     }).join('')
 
     w.document.write(`
-      <html><head><title>${title} - ${order.order_number}</title>
+      <html><head><title>${escapeHtml(title)} - ${escapeHtml(order.order_number)}</title>
       <style>body{font-family:'Malgun Gothic',sans-serif;margin:40px;font-size:13px}
       table{border-collapse:collapse;width:100%}
       h1{text-align:center;margin-bottom:24px;font-size:20px}
       .totals{margin-top:16px;text-align:right}
       @media print{body{margin:20mm}}</style></head>
       <body>
-        <h1>${title}</h1>
-        <p><strong>주문번호:</strong> ${order.order_number} &nbsp; <strong>소매점:</strong> ${order.retailer?.company_name}</p>
+        <h1>${escapeHtml(title)}</h1>
+        <p><strong>주문번호:</strong> ${escapeHtml(order.order_number)} &nbsp; <strong>소매점:</strong> ${escapeHtml(order.retailer?.company_name || '')}</p>
         <p style="margin-bottom:16px"><strong>발주일:</strong> ${formatDateTime(order.created_at)}</p>
         <table>
           <thead><tr>

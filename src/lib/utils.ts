@@ -40,3 +40,12 @@ export function calculateVAT(amount: number): number {
 export function calculateTotalWithVAT(amount: number): number {
   return amount + calculateVAT(amount)
 }
+
+export function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
