@@ -32,6 +32,9 @@ export interface Product {
   name: string
   category: string | null
   options: ProductOption[]
+  image_url: string | null
+  moq: number
+  order_unit: number
   is_active: boolean
   created_at: string
 }

@@ -51,6 +51,15 @@ export default function NewOrderPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile])
 
+  // 상품 변경 시 MOQ로 수량 초기화
+  useEffect(() => {
+    const product = products.find(p => p.id === selectedProduct)
+    if (product) {
+      setQuantity(product.moq ?? 1)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedProduct])
+
   // 상품/옵션 변경 시 단가 조회
   useEffect(() => {
     if (!selectedProduct || !profile) {
@@ -105,9 +114,19 @@ export default function NewOrderPage() {
   }, [selectedProduct, selectedOption, profile])
 
   const currentProductObj = products.find(p => p.id === selectedProduct)
+  const moq = currentProductObj?.moq ?? 1
+  const orderUnit = currentProductObj?.order_unit ?? 1
+
+  const adjustQuantity = (value: number): number => {
+    // 최소 MOQ 보장, order_unit 배수로 스냅
+    const snapped = Math.round(value / orderUnit) * orderUnit
+    return Math.max(moq, snapped)
+  }
 
   const addLine = () => {
-    if (!selectedProduct || !currentPrice || quantity < 1) return
+    if (!selectedProduct || !currentPrice) return
+    if (quantity < moq) return
+    if (quantity % orderUnit !== 0) return
 
     const product = products.find(p => p.id === selectedProduct)
     if (!product) return
@@ -207,6 +226,21 @@ export default function NewOrderPage() {
     )
   }
 
+  // 총판 미배정 확인
+  if (profile && !profile.distributor_id) {
+    return (
+      <div>
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">새 발주 작성</h1>
+        </div>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
+          <p className="text-yellow-800 font-medium">총판이 배정되지 않았습니다.</p>
+          <p className="text-sm text-yellow-600 mt-2">본사에 문의하여 총판 배정을 요청하세요.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div>
       <div className="mb-6 sm:mb-8">
@@ -248,6 +282,17 @@ export default function NewOrderPage() {
             </div>
           )}
 
+          {/* 선택된 상품 이미지 미리보기 */}
+          {currentProductObj?.image_url && (
+            <div className="flex items-end">
+              <img
+                src={currentProductObj.image_url}
+                alt={currentProductObj.name}
+                className="w-12 h-12 object-cover rounded-lg border border-gray-200"
+              />
+            </div>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">단가</label>
             <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-700">
@@ -256,14 +301,43 @@ export default function NewOrderPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">수량</label>
-            <input
-              type="number"
-              value={quantity}
-              onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
-              min="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              수량
+              {currentProductObj && (
+                <span className="ml-1.5 text-xs text-gray-400 font-normal">
+                  MOQ: {moq} / 단위: {orderUnit}
+                </span>
+              )}
+            </label>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setQuantity(q => adjustQuantity(q - orderUnit))}
+                disabled={!selectedProduct || quantity <= moq}
+                className="w-8 h-9 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                value={quantity}
+                onChange={(e) => {
+                  const raw = parseInt(e.target.value) || moq
+                  setQuantity(adjustQuantity(raw))
+                }}
+                min={moq}
+                step={orderUnit}
+                className="w-14 px-2 py-2 border border-gray-300 rounded-lg text-sm text-center"
+              />
+              <button
+                type="button"
+                onClick={() => setQuantity(q => q + orderUnit)}
+                disabled={!selectedProduct}
+                className="w-8 h-9 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                +
+              </button>
+            </div>
           </div>
 
           <button

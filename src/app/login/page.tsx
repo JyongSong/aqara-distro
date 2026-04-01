@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
@@ -16,6 +17,8 @@ function LoginForm() {
   const error = searchParams.get('error') === 'suspended'
     ? '계정이 정지되었습니다. 본사에 문의하세요.'
     : formError
+
+  const registered = searchParams.get('registered') === '1'
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,6 +49,13 @@ function LoginForm() {
             <h1 className="text-2xl font-bold text-gray-900">Aqara Distro</h1>
             <p className="text-sm text-gray-500 mt-1">발주·거래 관리 시스템</p>
           </div>
+
+          {/* Registration success banner */}
+          {registered && (
+            <div className="p-3 mb-4 bg-green-50 border border-green-200 rounded-lg text-sm text-green-700">
+              가입이 완료되었습니다. 로그인하세요.
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
@@ -93,6 +103,13 @@ function LoginForm() {
               {loading ? '로그인 중...' : '로그인'}
             </button>
           </form>
+
+          <p className="text-center text-sm text-gray-600 mt-5">
+            계정이 없으신가요?{' '}
+            <Link href="/register" className="text-blue-600 hover:underline font-medium">
+              회원가입
+            </Link>
+          </p>
         </div>
 
         <p className="text-center text-xs text-gray-400 mt-6">

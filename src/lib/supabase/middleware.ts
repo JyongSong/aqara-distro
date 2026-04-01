@@ -27,11 +27,12 @@ export async function updateSession(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 未登录时重定向到登录页
+  // 未登录时重定向到登录页（/register 页面除外）
   const isLoginPage = request.nextUrl.pathname === '/login'
   const isRootPage = request.nextUrl.pathname === '/'
+  const isRegisterPage = request.nextUrl.pathname === '/register'
 
-  if (!user && !isLoginPage) {
+  if (!user && !isLoginPage && !isRegisterPage) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
@@ -54,8 +55,8 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    // 登录页或根页面 → 重定向到仪表盘
-    if (isLoginPage || isRootPage) {
+    // 登录页、根页面或注册页 → 已登录则重定向到仪表盘
+    if (isLoginPage || isRootPage || isRegisterPage) {
       if (profile) {
         const url = request.nextUrl.clone()
         switch (profile.role) {
