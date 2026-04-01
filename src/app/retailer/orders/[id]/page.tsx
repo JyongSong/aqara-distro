@@ -59,7 +59,7 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
     setOrder({ ...order, status: 'DELIVERED', delivered_at: new Date().toISOString() })
   }
 
-  const printStatement = (type: 'retailer') => {
+  const printStatement = () => {
     const w = window.open('', '_blank', 'width=800,height=600')
     if (!w || !order) return
 
@@ -236,7 +236,7 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
       {/* 거래명세서 다운로드 */}
       {['DELIVERED', 'COMPLETED'].includes(order.status) && items.length > 0 && (
         <button
-          onClick={() => printStatement('retailer')}
+          onClick={() => printStatement()}
           className="px-6 py-3 bg-gray-700 text-white rounded-lg font-medium hover:bg-gray-800 mt-4"
         >
           거래명세서 인쇄

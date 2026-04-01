@@ -1,36 +1,34 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [formError, setFormError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
 
-  useEffect(() => {
-    if (searchParams.get('error') === 'suspended') {
-      setError('계정이 정지되었습니다. 본사에 문의하세요.')
-    }
-  }, [searchParams])
+  const error = searchParams.get('error') === 'suspended'
+    ? '계정이 정지되었습니다. 본사에 문의하세요.'
+    : formError
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
+    setFormError('')
     setLoading(true)
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
-    if (error) {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+    if (authError) {
+      setFormError('이메일 또는 비밀번호가 올바르지 않습니다.')
       setLoading(false)
       return
     }
