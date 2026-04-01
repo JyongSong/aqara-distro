@@ -167,19 +167,18 @@ export default function NewOrderPage() {
 
     const orderNumber = generateOrderNumber()
 
-    // 주문 생성
+    // 1단계: DRAFT 상태로 주문 생성 (RLS: order_items는 DRAFT 상태에서만 삽입 가능)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
         order_number: orderNumber,
         retailer_id: profile.id,
         distributor_id: profile.distributor_id,
-        status: 'SUBMITTED',
+        status: 'DRAFT',
         shipping_address: shippingAddress || null,
         desired_date: desiredDate || null,
         note: note || null,
         retailer_total: subtotal,
-        submitted_at: new Date().toISOString(),
       })
       .select()
       .single()
@@ -190,7 +189,7 @@ export default function NewOrderPage() {
       return
     }
 
-    // 주문 상세 생성
+    // 2단계: 주문 상세(품목) 삽입
     const items = lines.map(line => ({
       order_id: order.id,
       product_id: line.product_id,
@@ -203,7 +202,21 @@ export default function NewOrderPage() {
     const { error: itemsError } = await supabase.from('order_items').insert(items)
 
     if (itemsError) {
-      alert('주문 상세 생성에 실패했습니다.')
+      // 품목 삽입 실패 시 생성된 주문도 삭제
+      await supabase.from('orders').delete().eq('id', order.id)
+      alert('주문 품목 저장에 실패했습니다. 다시 시도해주세요.')
+      setSaving(false)
+      return
+    }
+
+    // 3단계: 주문 상태를 SUBMITTED로 업데이트
+    const { error: submitError } = await supabase
+      .from('orders')
+      .update({ status: 'SUBMITTED', submitted_at: new Date().toISOString() })
+      .eq('id', order.id)
+
+    if (submitError) {
+      alert('발주 제출에 실패했습니다. 다시 시도해주세요.')
       setSaving(false)
       return
     }
