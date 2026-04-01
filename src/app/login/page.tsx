@@ -23,6 +23,16 @@ function LoginForm() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setFormError('')
+
+    if (!email.trim()) {
+      setFormError('이메일을 입력해주세요.')
+      return
+    }
+    if (!password) {
+      setFormError('비밀번호를 입력해주세요.')
+      return
+    }
+
     setLoading(true)
 
     const { error: authError } = await supabase.auth.signInWithPassword({
@@ -58,7 +68,7 @@ function LoginForm() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} noValidate className="space-y-5">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
                 이메일

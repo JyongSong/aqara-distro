@@ -57,18 +57,40 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
 
+    if (!form.company_name.trim()) {
+      setError('업체명을 입력해주세요.')
+      return
+    }
+    if (!form.contact_name.trim()) {
+      setError('담당자 이름을 입력해주세요.')
+      return
+    }
+    if (!form.phone.trim()) {
+      setError('연락처를 입력해주세요.')
+      return
+    }
+    if (!form.email.trim()) {
+      setError('이메일을 입력해주세요.')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('올바른 이메일 주소를 입력해주세요.')
+      return
+    }
     if (!form.address) {
       setError('주소 검색 버튼을 눌러 납품 주소를 입력해주세요.')
       return
     }
-
-    if (form.password !== form.confirm_password) {
-      setError('비밀번호가 일치하지 않습니다.')
+    if (!form.password) {
+      setError('비밀번호를 입력해주세요.')
       return
     }
-
     if (form.password.length < 8) {
       setError('비밀번호는 8자 이상이어야 합니다.')
+      return
+    }
+    if (form.password !== form.confirm_password) {
+      setError('비밀번호가 일치하지 않습니다.')
       return
     }
 
@@ -114,7 +136,7 @@ export default function RegisterPage() {
               <p className="text-sm text-gray-500 mt-1">소매점 회원가입</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
               {/* 업체명 */}
               <div>
                 <label htmlFor="company_name" className="block text-sm font-medium text-gray-700 mb-1.5">
