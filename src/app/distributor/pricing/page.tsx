@@ -97,14 +97,14 @@ export default function DistributorPricingPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">소매점 단가 관리</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">소매점 단가 관리</h1>
           <p className="text-sm text-gray-500 mt-1">소매점별 견적 단가 설정 (VAT 별도)</p>
         </div>
         <button
           onClick={() => setShowForm(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+          className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
         >
           + 단가 등록
         </button>
@@ -115,7 +115,7 @@ export default function DistributorPricingPage() {
         <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">소매점 견적단가 등록</h2>
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">소매점</label>
                 <select
@@ -146,7 +146,7 @@ export default function DistributorPricingPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {selectedProduct && selectedProduct.options.length > 0 && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">옵션</label>
@@ -216,36 +216,62 @@ export default function DistributorPricingPage() {
         ) : quotes.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-400 text-sm">등록된 단가가 없습니다.</div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">소매점</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">상품</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">옵션</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">견적단가</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">적용기간</th>
-                <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">관리</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quotes.map((q) => (
-                <tr key={q.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-6 py-3 text-sm text-gray-900">{q.retailer_profile?.company_name}</td>
-                  <td className="px-6 py-3 text-sm text-gray-900">{q.product?.name}</td>
-                  <td className="px-6 py-3 text-sm text-gray-500">{q.option_code || '-'}</td>
-                  <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">{formatKRW(q.unit_price)}</td>
-                  <td className="px-6 py-3 text-sm text-gray-500">
-                    {formatDate(q.effective_from)} ~ {q.effective_to ? formatDate(q.effective_to) : '무기한'}
-                  </td>
-                  <td className="px-6 py-3 text-center">
-                    <button onClick={() => handleDelete(q.id)} className="text-sm text-red-500 hover:underline">
-                      삭제
-                    </button>
-                  </td>
+          <>
+            {/* Desktop table */}
+            <table className="w-full hidden lg:table">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">소매점</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">상품</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">옵션</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">견적단가</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">적용기간</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">관리</th>
                 </tr>
+              </thead>
+              <tbody>
+                {quotes.map((q) => (
+                  <tr key={q.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-6 py-3 text-sm text-gray-900">{q.retailer_profile?.company_name}</td>
+                    <td className="px-6 py-3 text-sm text-gray-900">{q.product?.name}</td>
+                    <td className="px-6 py-3 text-sm text-gray-500">{q.option_code || '-'}</td>
+                    <td className="px-6 py-3 text-right text-sm font-medium text-gray-900">{formatKRW(q.unit_price)}</td>
+                    <td className="px-6 py-3 text-sm text-gray-500">
+                      {formatDate(q.effective_from)} ~ {q.effective_to ? formatDate(q.effective_to) : '무기한'}
+                    </td>
+                    <td className="px-6 py-3 text-center">
+                      <button onClick={() => handleDelete(q.id)} className="text-sm text-red-500 hover:underline">
+                        삭제
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Mobile cards */}
+            <div className="lg:hidden divide-y divide-gray-100">
+              {quotes.map((q) => (
+                <div key={q.id} className="p-4 space-y-1.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{q.retailer_profile?.company_name}</p>
+                      <p className="text-sm text-gray-600 truncate">
+                        {q.product?.name}{q.option_code ? ` · ${q.option_code}` : ''}
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-gray-900 whitespace-nowrap flex-shrink-0">{formatKRW(q.unit_price)}</span>
+                  </div>
+                  <p className="text-xs text-gray-400">
+                    {formatDate(q.effective_from)} ~ {q.effective_to ? formatDate(q.effective_to) : '무기한'}
+                  </p>
+                  <button onClick={() => handleDelete(q.id)} className="text-xs text-red-500 hover:underline">
+                    삭제
+                  </button>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
     </div>

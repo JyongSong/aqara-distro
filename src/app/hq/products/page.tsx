@@ -192,7 +192,7 @@ export default function HQProductsPage() {
           </h2>
           <form onSubmit={handleSave} className="space-y-4">
             {/* 기본 정보 */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">상품코드</label>
                 <input
@@ -301,19 +301,19 @@ export default function HQProductsPage() {
                   ))}
                 </div>
               )}
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <input
                   type="text"
                   value={newOption.code}
                   onChange={(e) => setNewOption({ ...newOption, code: e.target.value })}
-                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="w-28 sm:w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   placeholder="옵션코드"
                 />
                 <input
                   type="text"
                   value={newOption.name}
                   onChange={(e) => setNewOption({ ...newOption, name: e.target.value })}
-                  className="w-48 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  className="flex-1 min-w-[8rem] px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   placeholder="옵션명"
                 />
                 <button
@@ -368,81 +368,142 @@ export default function HQProductsPage() {
         ) : products.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-400 text-sm">등록된 상품이 없습니다.</div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 w-14">이미지</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">상품코드</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">상품명</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">카테고리</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">옵션</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">MOQ/단위</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">상태</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">관리</th>
-              </tr>
-            </thead>
-            <tbody>
+          <>
+            {/* Desktop table */}
+            <table className="w-full hidden lg:table">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 w-14">이미지</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">상품코드</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">상품명</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">카테고리</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">옵션</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">MOQ/단위</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">상태</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="w-10 h-10 object-cover rounded-lg border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
+                          <span className="text-gray-300 text-xs">없음</span>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-mono text-gray-900">{product.product_code}</td>
+                    <td className="px-4 py-3 text-sm text-gray-900">{product.name}</td>
+                    <td className="px-4 py-3 text-sm text-gray-500">{product.category || '-'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-1">
+                        {(product.options || []).map((opt, i) => (
+                          <span key={i} className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
+                            {opt.name}
+                          </span>
+                        ))}
+                        {(!product.options || product.options.length === 0) && (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center text-xs text-gray-600">
+                      <span className="block">MOQ: {product.moq ?? 1}</span>
+                      <span className="block text-gray-400">단위: {product.order_unit ?? 1}</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                        product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {product.is_active ? '활성' : '비활성'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => openEdit(product)}
+                          className="text-sm text-blue-600 hover:underline"
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => toggleActive(product)}
+                          className="text-sm text-gray-500 hover:underline"
+                        >
+                          {product.is_active ? '비활성화' : '활성화'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Mobile cards */}
+            <div className="lg:hidden divide-y divide-gray-100">
               {products.map((product) => (
-                <tr key={product.id} className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        className="w-10 h-10 object-cover rounded-lg border border-gray-200"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                        <span className="text-gray-300 text-xs">없음</span>
+                <div key={product.id} className="p-4 flex items-start gap-3">
+                  {product.image_url ? (
+                    <img
+                      src={product.image_url}
+                      alt={product.name}
+                      className="w-12 h-12 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-gray-300 text-xs">없음</span>
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-sm font-medium text-gray-900">{product.name}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium flex-shrink-0 ${
+                        product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                      }`}>
+                        {product.is_active ? '활성' : '비활성'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-0.5 font-mono">
+                      {product.product_code}{product.category ? ` · ${product.category}` : ''}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      MOQ: {product.moq ?? 1} / 단위: {product.order_unit ?? 1}
+                    </p>
+                    {(product.options || []).length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(product.options || []).map((opt, i) => (
+                          <span key={i} className="px-1.5 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
+                            {opt.name}
+                          </span>
+                        ))}
                       </div>
                     )}
-                  </td>
-                  <td className="px-4 py-3 text-sm font-mono text-gray-900">{product.product_code}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900">{product.name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-500">{product.category || '-'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {(product.options || []).map((opt, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-gray-100 rounded text-xs text-gray-600">
-                          {opt.name}
-                        </span>
-                      ))}
-                      {(!product.options || product.options.length === 0) && (
-                        <span className="text-xs text-gray-400">-</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-center text-xs text-gray-600">
-                    <span className="block">MOQ: {product.moq ?? 1}</span>
-                    <span className="block text-gray-400">단위: {product.order_unit ?? 1}</span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                      product.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      {product.is_active ? '활성' : '비활성'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center gap-3 mt-2">
                       <button
                         onClick={() => openEdit(product)}
-                        className="text-sm text-blue-600 hover:underline"
+                        className="text-xs text-blue-600 hover:underline"
                       >
                         수정
                       </button>
                       <button
                         onClick={() => toggleActive(product)}
-                        className="text-sm text-gray-500 hover:underline"
+                        className="text-xs text-gray-500 hover:underline"
                       >
                         {product.is_active ? '비활성화' : '활성화'}
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </>
         )}
       </div>
     </div>
