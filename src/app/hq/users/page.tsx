@@ -24,6 +24,8 @@ export default function HQUsersPage() {
   const [roleFilter, setRoleFilter] = useState<string>('all')
   const [processing, setProcessing] = useState<string | null>(null)
 
+  const [viewingUser, setViewingUser] = useState<UserProfile | null>(null)
+
   // 총판 배정 모달 상태
   const [assigningUser, setAssigningUser] = useState<UserProfile | null>(null)
   const [selectedDistributor, setSelectedDistributor] = useState<string>('')
@@ -194,7 +196,7 @@ export default function HQUsersPage() {
               </thead>
               <tbody>
                 {users.map((user) => (
-                  <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50">
+                  <tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer" onClick={() => setViewingUser(user)}>
                     <td className="px-6 py-3 text-sm font-medium text-gray-900">{user.company_name}</td>
                     <td className="px-6 py-3 text-sm text-gray-600">{user.contact_name || '-'}</td>
                     <td className="px-6 py-3">
@@ -237,7 +239,7 @@ export default function HQUsersPage() {
             {/* Mobile cards */}
             <div className="lg:hidden divide-y divide-gray-100">
               {users.map((user) => (
-                <div key={user.id} className="p-4 space-y-2">
+                <div key={user.id} className="p-4 space-y-2 cursor-pointer active:bg-gray-50" onClick={() => setViewingUser(user)}>
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-900">{user.company_name}</span>
                     <span className={cn(
@@ -306,6 +308,77 @@ export default function HQUsersPage() {
           </div>
         </dl>
       </div>
+
+      {/* 사용자 상세 정보 모달 */}
+      {viewingUser && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">사용자 정보</h3>
+              <button
+                onClick={() => setViewingUser(null)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <dl className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-gray-500">회사명</dt>
+                <dd className="font-medium text-gray-900 text-right">{viewingUser.company_name}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-500">담당자</dt>
+                <dd className="text-gray-700">{viewingUser.contact_name || '-'}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-500">연락처</dt>
+                <dd className="text-gray-700">{viewingUser.phone || '-'}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-500">역할</dt>
+                <dd className="text-gray-700">{ROLE_LABELS[viewingUser.role]}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-500">상태</dt>
+                <dd>
+                  <span className={cn('inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium', STATUS_COLORS[viewingUser.status])}>
+                    {STATUS_LABELS[viewingUser.status]}
+                  </span>
+                </dd>
+              </div>
+              {viewingUser.role === 'retailer' && (
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">담당 총판</dt>
+                  <dd className={viewingUser.distributor_id ? 'text-gray-700' : 'text-orange-500'}>
+                    {getDistributorName(viewingUser.distributor_id) || '미배정'}
+                  </dd>
+                </div>
+              )}
+              {viewingUser.address && (
+                <div>
+                  <dt className="text-gray-500 mb-1">주소</dt>
+                  <dd className="text-gray-700 text-xs leading-relaxed">{viewingUser.address}</dd>
+                </div>
+              )}
+              <div className="flex justify-between pt-2 border-t border-gray-100">
+                <dt className="text-gray-400">등록일</dt>
+                <dd className="text-gray-400 text-xs">{new Date(viewingUser.created_at).toLocaleDateString('ko-KR')}</dd>
+              </div>
+            </dl>
+
+            <button
+              onClick={() => setViewingUser(null)}
+              className="w-full mt-5 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm hover:bg-gray-200"
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 총판 배정 모달 */}
       {assigningUser && (
