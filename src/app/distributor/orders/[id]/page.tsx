@@ -12,7 +12,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
   const { id } = use(params)
   const { profile } = useAuth()
   const [order, setOrder] = useState<(Order & { retailer: { company_name: string } }) | null>(null)
-  const [items, setItems] = useState<(OrderItem & { product: { name: string; product_code: string } })[]>([])
+  const [items, setItems] = useState<(OrderItem & { product: { name: string; product_code: string; product_url: string | null; consumer_price: number | null } })[]>([])
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
@@ -33,7 +33,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
 
       const { data: itemsData } = await supabase
         .from('order_items')
-        .select('*, product:products(name, product_code)')
+        .select('*, product:products(name, product_code, product_url, consumer_price)')
         .eq('order_id', id)
 
       if (itemsData) setItems(itemsData)
@@ -287,7 +287,12 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
           <tbody>
             {items.map((item) => (
               <tr key={item.id} className="border-b border-gray-50">
-                <td className="py-3 text-sm text-gray-900">{item.product?.name}</td>
+                <td className="py-3 text-sm text-gray-900">
+                  {item.product?.product_url ? (
+                    <a href={item.product.product_url} target="_blank" rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline">{item.product.name}</a>
+                  ) : item.product?.name}
+                </td>
                 <td className="py-3 text-sm text-gray-500">{item.option_code || '-'}</td>
                 <td className="py-3 text-right text-sm text-gray-600">{item.quantity}</td>
                 <td className="py-3 text-right text-sm text-gray-600">{formatKRW(item.retailer_unit_price)}</td>

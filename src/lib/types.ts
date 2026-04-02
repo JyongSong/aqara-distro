@@ -35,6 +35,8 @@ export interface Product {
   image_url: string | null
   moq: number
   order_unit: number
+  consumer_price: number | null
+  product_url: string | null
   is_active: boolean
   created_at: string
 }
