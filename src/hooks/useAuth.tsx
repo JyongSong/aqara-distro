@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/client'
 import { UserProfile } from '@/lib/types'
@@ -23,54 +23,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
-  const initialized = useRef(false)
   const supabase = createClient()
 
   useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
-
-    const init = async () => {
-      try {
-        // Use getSession() to avoid auth lock issues in dev mode
-        const { data: { session } } = await supabase.auth.getSession()
-        const currentUser = session?.user ?? null
-        setUser(currentUser)
-
-        if (currentUser) {
-          const { data } = await supabase
-            .from('users_profile')
-            .select('*')
-            .eq('id', currentUser.id)
-            .single()
-          setProfile(data)
-        }
-      } catch {
-        // Network or auth error
-      }
-      setLoading(false)
-    }
-
-    init()
+    let isMounted = true
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event: AuthChangeEvent, session: Session | null) => {
+        if (!isMounted) return
         setUser(session?.user ?? null)
         if (session?.user) {
-          const { data } = await supabase
-            .from('users_profile')
-            .select('*')
-            .eq('id', session.user.id)
-            .single()
-          setProfile(data)
+          try {
+            const { data } = await supabase
+              .from('users_profile')
+              .select('*')
+              .eq('id', session.user.id)
+              .single()
+            if (isMounted) setProfile(data)
+          } catch {
+            // ignore
+          }
         } else {
           setProfile(null)
         }
-        setLoading(false)
+        if (isMounted) setLoading(false)
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

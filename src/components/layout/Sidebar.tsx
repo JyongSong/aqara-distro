@@ -20,6 +20,7 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
   ],
   distributor: [
     { label: '대시보드', href: '/distributor/dashboard', icon: '📊' },
+    { label: '상품리스트', href: '/distributor/products', icon: '📦' },
     { label: '발주 관리', href: '/distributor/orders', icon: '📋' },
     { label: '단가 관리', href: '/distributor/pricing', icon: '💰' },
   ],
