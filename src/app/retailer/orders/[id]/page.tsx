@@ -111,8 +111,8 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
         <td style="border:1px solid #ccc;padding:6px;text-align:left">${escapeHtml(item.product?.name || '')}</td>
         <td style="border:1px solid #ccc;padding:6px;text-align:center">${escapeHtml(item.option_code || '-')}</td>
         <td style="border:1px solid #ccc;padding:6px;text-align:right">${item.quantity}</td>
-        <td style="border:1px solid #ccc;padding:6px;text-align:right">${formatKRW(item.retailer_unit_price)}</td>
-        <td style="border:1px solid #ccc;padding:6px;text-align:right">${formatKRW(item.retailer_amount)}</td>
+        <td style="border:1px solid #ccc;padding:6px;text-align:right">${formatKRW(item.retailer_unit_price ?? 0)}</td>
+        <td style="border:1px solid #ccc;padding:6px;text-align:right">${formatKRW(item.retailer_amount ?? 0)}</td>
       </tr>
     `).join('')
 

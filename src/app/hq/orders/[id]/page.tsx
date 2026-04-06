@@ -70,8 +70,8 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
     const totalAmt = calculateTotalWithVAT(subtotal)
 
     const rows = items.map(item => {
-      const price = isRetailer ? item.retailer_unit_price : (item.hq_unit_price || 0)
-      const amount = isRetailer ? item.retailer_amount : (item.hq_amount || 0)
+      const price = isRetailer ? (item.retailer_unit_price ?? 0) : (item.hq_unit_price || 0)
+      const amount = isRetailer ? (item.retailer_amount ?? 0) : (item.hq_amount || 0)
       return `
         <tr>
           <td style="border:1px solid #ccc;padding:6px;text-align:left">${escapeHtml(item.product?.name || '')}</td>
@@ -274,8 +274,8 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
                 </td>
                 <td className="py-3 text-sm text-gray-500">{item.option_code || '-'}</td>
                 <td className="py-3 text-right text-sm text-gray-600">{item.quantity}</td>
-                <td className="py-3 text-right text-sm text-gray-600">{formatKRW(item.retailer_unit_price)}</td>
-                <td className="py-3 text-right text-sm font-medium text-gray-900">{formatKRW(item.retailer_amount)}</td>
+                <td className="py-3 text-right text-sm text-gray-600">{item.retailer_unit_price != null ? formatKRW(item.retailer_unit_price) : '-'}</td>
+                <td className="py-3 text-right text-sm font-medium text-gray-900">{item.retailer_amount != null ? formatKRW(item.retailer_amount) : '-'}</td>
                 <td className="py-3 text-right text-sm text-blue-600">
                   {item.hq_unit_price ? formatKRW(item.hq_unit_price) : '-'}
                 </td>
