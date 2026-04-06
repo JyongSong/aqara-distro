@@ -15,12 +15,14 @@ interface NavItem {
 const NAV_ITEMS: Record<string, NavItem[]> = {
   retailer: [
     { label: '대시보드', href: '/retailer/dashboard', icon: '📊' },
-    { label: '발주 목록', href: '/retailer/orders', icon: '📋' },
-    { label: '새 발주', href: '/retailer/orders/new', icon: '➕' },
+    { label: '상품 리스트', href: '/retailer/products', icon: '📦' },
+    { label: '견적/발주 관리', href: '/retailer/orders', icon: '📋' },
+    { label: '견적 요청', href: '/retailer/orders/new', icon: '➕' },
   ],
   distributor: [
     { label: '대시보드', href: '/distributor/dashboard', icon: '📊' },
     { label: '상품리스트', href: '/distributor/products', icon: '📦' },
+    { label: '소매점 관리', href: '/distributor/retailers', icon: '👥' },
     { label: '발주 관리', href: '/distributor/orders', icon: '📋' },
     { label: '본사 발주', href: '/distributor/orders/new', icon: '➕' },
     { label: '단가 관리', href: '/distributor/pricing', icon: '💰' },

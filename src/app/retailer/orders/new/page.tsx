@@ -1,184 +1,204 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { Product } from '@/lib/types'
-import { formatKRW, generateOrderNumber, calculateVAT, calculateTotalWithVAT } from '@/lib/utils'
-import { useRouter } from 'next/navigation'
+import { generateOrderNumber } from '@/lib/utils'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 interface OrderLine {
   product_id: string
   product_name: string
   option_code: string
   quantity: number
-  unit_price: number
-  amount: number
 }
 
-export default function NewOrderPage() {
+interface DistributorRetailerProductSetting {
+  id: string
+  distributor_id: string
+  product_id: string
+  moq: number
+  order_unit: number
+}
+
+function NewOrderForm() {
   const { profile } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   const [products, setProducts] = useState<Product[]>([])
+  const [settingsMap, setSettingsMap] = useState<Record<string, { moq: number; order_unit: number }>>({})
   const [lines, setLines] = useState<OrderLine[]>([])
   const [shippingAddress, setShippingAddress] = useState('')
   const [desiredDate, setDesiredDate] = useState('')
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
 
-  // 현재 선택 중인 품목
+  // Current selector state
   const [selectedProduct, setSelectedProduct] = useState('')
   const [selectedOption, setSelectedOption] = useState('')
   const [quantity, setQuantity] = useState(1)
-  const [currentPrice, setCurrentPrice] = useState<number | null>(null)
-  const [priceLoading, setPriceLoading] = useState(false)
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      const { data } = await supabase
+    if (!profile) return
+
+    const fetchData = async () => {
+      // Fetch active products
+      const { data: productData } = await supabase
         .from('products')
         .select('*')
         .eq('is_active', true)
         .order('name')
-      if (data) setProducts(data)
-    }
-    fetchProducts()
+      if (productData) setProducts(productData)
 
-    if (profile?.address) setShippingAddress(profile.address)
+      // Fetch distributor settings for MOQ/order_unit overrides
+      if (profile.distributor_id) {
+        const { data: settingsData } = await supabase
+          .from('distributor_retailer_product_settings')
+          .select('*')
+          .eq('distributor_id', profile.distributor_id)
+
+        if (settingsData) {
+          const map: Record<string, { moq: number; order_unit: number }> = {}
+          ;(settingsData as DistributorRetailerProductSetting[]).forEach(s => {
+            map[s.product_id] = { moq: s.moq, order_unit: s.order_unit }
+          })
+          setSettingsMap(map)
+        }
+      }
+
+      // Pre-fill shipping address from profile
+      if (profile.address) setShippingAddress(profile.address)
+    }
+
+    fetchData()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile])
 
-  // 상품 변경 시 MOQ로 수량 초기화
+  // Pre-select product from URL query param
   useEffect(() => {
-    const product = products.find(p => p.id === selectedProduct)
-    if (product) {
-      setQuantity(product.moq ?? 1)
+    const productId = searchParams.get('product_id')
+    if (productId) {
+      setSelectedProduct(productId)
     }
+  }, [searchParams])
+
+  // Reset quantity to MOQ when product changes
+  useEffect(() => {
+    if (!selectedProduct) return
+    const product = products.find(p => p.id === selectedProduct)
+    if (!product) return
+    const override = settingsMap[selectedProduct]
+    const moq = override?.moq ?? product.moq ?? 1
+    setQuantity(moq)
+    setSelectedOption('')
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProduct])
 
-  // 상품/옵션 변경 시 단가 조회
-  useEffect(() => {
-    if (!selectedProduct || !profile) {
-      setCurrentPrice(null)
-      return
-    }
-
-    const fetchPrice = async () => {
-      setPriceLoading(true)
-      const today = new Date().toISOString().split('T')[0]
-
-      let query = supabase
-        .from('retailer_price_quotes')
-        .select('unit_price')
-        .eq('retailer_id', profile.id)
-        .eq('product_id', selectedProduct)
-        .lte('effective_from', today)
-        .or(`effective_to.is.null,effective_to.gte.${today}`)
-        .order('effective_from', { ascending: false })
-        .limit(1)
-
-      if (selectedOption) {
-        query = query.eq('option_code', selectedOption)
-      } else {
-        query = query.is('option_code', null)
-      }
-
-      const { data } = await query
-
-      // 옵션 없는 가격도 시도
-      if (!data || data.length === 0) {
-        const { data: fallback } = await supabase
-          .from('retailer_price_quotes')
-          .select('unit_price')
-          .eq('retailer_id', profile.id)
-          .eq('product_id', selectedProduct)
-          .is('option_code', null)
-          .lte('effective_from', today)
-          .or(`effective_to.is.null,effective_to.gte.${today}`)
-          .order('effective_from', { ascending: false })
-          .limit(1)
-
-        setCurrentPrice(fallback?.[0]?.unit_price ?? null)
-      } else {
-        setCurrentPrice(data[0].unit_price)
-      }
-      setPriceLoading(false)
-    }
-
-    fetchPrice()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProduct, selectedOption, profile])
-
   const currentProductObj = products.find(p => p.id === selectedProduct)
-  const moq = currentProductObj?.moq ?? 1
-  const orderUnit = currentProductObj?.order_unit ?? 1
+  const currentOverride = selectedProduct ? settingsMap[selectedProduct] : undefined
+  const moq = currentOverride?.moq ?? currentProductObj?.moq ?? 1
+  const orderUnit = currentOverride?.order_unit ?? currentProductObj?.order_unit ?? 1
 
   const adjustQuantity = (value: number): number => {
-    // 최소 MOQ 보장, order_unit 배수로 스냅
     const snapped = Math.round(value / orderUnit) * orderUnit
     return Math.max(moq, snapped)
   }
 
   const addLine = () => {
-    if (!selectedProduct || !currentPrice) return
-    if (quantity < moq) return
-    if (quantity % orderUnit !== 0) return
-
+    if (!selectedProduct) return
     const product = products.find(p => p.id === selectedProduct)
     if (!product) return
 
     const optionName = selectedOption
-      ? product.options.find(o => o.code === selectedOption)?.name || selectedOption
+      ? product.options?.find((o: { code: string; name: string }) => o.code === selectedOption)?.name || selectedOption
       : ''
 
-    setLines([
-      ...lines,
+    setLines(prev => [
+      ...prev,
       {
         product_id: selectedProduct,
         product_name: `${product.name}${optionName ? ` (${optionName})` : ''}`,
         option_code: selectedOption,
         quantity,
-        unit_price: currentPrice,
-        amount: currentPrice * quantity,
       },
     ])
 
     setSelectedProduct('')
     setSelectedOption('')
     setQuantity(1)
-    setCurrentPrice(null)
   }
 
   const removeLine = (index: number) => {
-    setLines(lines.filter((_, i) => i !== index))
+    setLines(prev => prev.filter((_, i) => i !== index))
   }
 
-  const subtotal = lines.reduce((sum, line) => sum + line.amount, 0)
-  const vat = calculateVAT(subtotal)
-  const total = calculateTotalWithVAT(subtotal)
-
-  const handleSubmit = async () => {
+  const handleSaveDraft = async () => {
     if (!profile || lines.length === 0) return
     setSaving(true)
 
-    const orderNumber = generateOrderNumber()
-
-    // 1단계: DRAFT 상태로 주문 생성 (RLS: order_items는 DRAFT 상태에서만 삽입 가능)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
-        order_number: orderNumber,
+        order_number: generateOrderNumber(),
         retailer_id: profile.id,
         distributor_id: profile.distributor_id,
         status: 'DRAFT',
         shipping_address: shippingAddress || null,
         desired_date: desiredDate || null,
         note: note || null,
-        retailer_total: subtotal,
+        retailer_total: 0,
+        hq_total: 0,
+      })
+      .select()
+      .single()
+
+    if (orderError || !order) {
+      alert('임시 저장에 실패했습니다.')
+      setSaving(false)
+      return
+    }
+
+    const { error: itemsError } = await supabase.from('order_items').insert(
+      lines.map(l => ({
+        order_id: order.id,
+        product_id: l.product_id,
+        option_code: l.option_code || null,
+        quantity: l.quantity,
+        retailer_unit_price: null,
+        retailer_amount: null,
+      }))
+    )
+
+    if (itemsError) {
+      await supabase.from('orders').delete().eq('id', order.id)
+      alert('품목 저장에 실패했습니다. 다시 시도해주세요.')
+      setSaving(false)
+      return
+    }
+
+    router.push('/retailer/orders')
+  }
+
+  const handleSubmit = async () => {
+    if (!profile || lines.length === 0) return
+    setSaving(true)
+
+    // 1. Create order as DRAFT
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        order_number: generateOrderNumber(),
+        retailer_id: profile.id,
+        distributor_id: profile.distributor_id,
+        status: 'DRAFT',
+        shipping_address: shippingAddress || null,
+        desired_date: desiredDate || null,
+        note: note || null,
+        retailer_total: 0,
+        hq_total: 0,
       })
       .select()
       .single()
@@ -189,47 +209,46 @@ export default function NewOrderPage() {
       return
     }
 
-    // 2단계: 주문 상세(품목) 삽입
-    const items = lines.map(line => ({
-      order_id: order.id,
-      product_id: line.product_id,
-      option_code: line.option_code || null,
-      quantity: line.quantity,
-      retailer_unit_price: line.unit_price,
-      retailer_amount: line.amount,
-    }))
-
-    const { error: itemsError } = await supabase.from('order_items').insert(items)
+    // 2. Insert items (no price fields)
+    const { error: itemsError } = await supabase.from('order_items').insert(
+      lines.map(l => ({
+        order_id: order.id,
+        product_id: l.product_id,
+        option_code: l.option_code || null,
+        quantity: l.quantity,
+        retailer_unit_price: null,
+        retailer_amount: null,
+      }))
+    )
 
     if (itemsError) {
-      // 품목 삽입 실패 시 생성된 주문도 삭제
       await supabase.from('orders').delete().eq('id', order.id)
       alert('주문 품목 저장에 실패했습니다. 다시 시도해주세요.')
       setSaving(false)
       return
     }
 
-    // 3단계: 주문 상태를 SUBMITTED로 업데이트
+    // 3. Update status to SUBMITTED
     const { error: submitError } = await supabase
       .from('orders')
       .update({ status: 'SUBMITTED', submitted_at: new Date().toISOString() })
       .eq('id', order.id)
 
     if (submitError) {
-      alert('발주 제출에 실패했습니다. 다시 시도해주세요.')
+      alert('견적 요청 제출에 실패했습니다. 다시 시도해주세요.')
       setSaving(false)
       return
     }
 
-    router.push(`/retailer/orders/${order.id}`)
+    router.push('/retailer/orders')
   }
 
-  // 제재 상태 확인
+  // Guard: restricted status
   if (profile?.status === 'restricted') {
     return (
       <div>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">새 발주 작성</h1>
+          <h1 className="text-2xl font-bold text-gray-900">견적 요청</h1>
         </div>
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-8 text-center">
           <p className="text-orange-800 font-medium">주문이 제한된 상태입니다.</p>
@@ -239,12 +258,12 @@ export default function NewOrderPage() {
     )
   }
 
-  // 총판 미배정 확인
+  // Guard: no distributor assigned
   if (profile && !profile.distributor_id) {
     return (
       <div>
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">새 발주 작성</h1>
+          <h1 className="text-2xl font-bold text-gray-900">견적 요청</h1>
         </div>
         <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
           <p className="text-yellow-800 font-medium">총판이 배정되지 않았습니다.</p>
@@ -257,19 +276,19 @@ export default function NewOrderPage() {
   return (
     <div>
       <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">새 발주 작성</h1>
-        <p className="text-sm text-gray-500 mt-1">상품을 선택하고 수량을 입력하세요</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">견적 요청</h1>
+        <p className="text-sm text-gray-500 mt-1">상품과 수량을 선택하고 총판에 견적을 요청하세요</p>
       </div>
 
-      {/* 상품 추가 섹션 */}
+      {/* 상품 선택 섹션 */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">상품 선택</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">상품</label>
             <select
               value={selectedProduct}
-              onChange={(e) => { setSelectedProduct(e.target.value); setSelectedOption('') }}
+              onChange={(e) => { setSelectedProduct(e.target.value) }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
               <option value="">선택</option>
@@ -279,7 +298,7 @@ export default function NewOrderPage() {
             </select>
           </div>
 
-          {currentProductObj && currentProductObj.options.length > 0 && (
+          {currentProductObj && currentProductObj.options?.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">옵션</label>
               <select
@@ -288,30 +307,12 @@ export default function NewOrderPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
               >
                 <option value="">선택</option>
-                {currentProductObj.options.map(opt => (
+                {currentProductObj.options.map((opt: { code: string; name: string }) => (
                   <option key={opt.code} value={opt.code}>{opt.name}</option>
                 ))}
               </select>
             </div>
           )}
-
-          {/* 선택된 상품 이미지 미리보기 */}
-          {currentProductObj?.image_url && (
-            <div className="flex items-end">
-              <img
-                src={currentProductObj.image_url}
-                alt={currentProductObj.name}
-                className="w-12 h-12 object-cover rounded-lg border border-gray-200"
-              />
-            </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">단가</label>
-            <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-700">
-              {priceLoading ? '조회 중...' : currentPrice ? formatKRW(currentPrice) : '-'}
-            </div>
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -355,31 +356,25 @@ export default function NewOrderPage() {
 
           <button
             onClick={addLine}
-            disabled={!selectedProduct || !currentPrice}
+            disabled={!selectedProduct}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             추가
           </button>
         </div>
-
-        {!currentPrice && selectedProduct && !priceLoading && (
-          <p className="text-sm text-red-500 mt-2">설정된 단가가 없습니다. 총판에 문의하세요.</p>
-        )}
       </div>
 
-      {/* 발주 품목 목록 */}
+      {/* 견적 품목 목록 */}
       {lines.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">발주 품목</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">견적 품목</h2>
 
           {/* Desktop table */}
           <table className="w-full mb-4 hidden sm:table">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="pb-2 text-left text-xs font-medium text-gray-500">상품</th>
-                <th className="pb-2 text-right text-xs font-medium text-gray-500">단가</th>
+                <th className="pb-2 text-left text-xs font-medium text-gray-500">상품명</th>
                 <th className="pb-2 text-right text-xs font-medium text-gray-500">수량</th>
-                <th className="pb-2 text-right text-xs font-medium text-gray-500">금액</th>
                 <th className="pb-2 text-center text-xs font-medium text-gray-500 w-16"></th>
               </tr>
             </thead>
@@ -387,11 +382,14 @@ export default function NewOrderPage() {
               {lines.map((line, i) => (
                 <tr key={i} className="border-b border-gray-50">
                   <td className="py-3 text-sm text-gray-900">{line.product_name}</td>
-                  <td className="py-3 text-right text-sm text-gray-600">{formatKRW(line.unit_price)}</td>
                   <td className="py-3 text-right text-sm text-gray-600">{line.quantity}</td>
-                  <td className="py-3 text-right text-sm font-medium text-gray-900">{formatKRW(line.amount)}</td>
                   <td className="py-3 text-center">
-                    <button onClick={() => removeLine(i)} className="text-red-500 text-xs hover:underline">삭제</button>
+                    <button
+                      onClick={() => removeLine(i)}
+                      className="text-red-500 text-xs hover:underline"
+                    >
+                      삭제
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -402,38 +400,26 @@ export default function NewOrderPage() {
           <div className="sm:hidden space-y-3 mb-4">
             {lines.map((line, i) => (
               <div key={i} className="border border-gray-100 rounded-lg p-3">
-                <div className="flex items-start justify-between mb-1">
+                <div className="flex items-start justify-between">
                   <span className="text-sm font-medium text-gray-900">{line.product_name}</span>
-                  <button onClick={() => removeLine(i)} className="text-red-500 text-xs hover:underline ml-2">삭제</button>
+                  <button
+                    onClick={() => removeLine(i)}
+                    className="text-red-500 text-xs hover:underline ml-2 shrink-0"
+                  >
+                    삭제
+                  </button>
                 </div>
-                <div className="flex justify-between text-sm text-gray-500">
-                  <span>{formatKRW(line.unit_price)} × {line.quantity}</span>
-                  <span className="font-medium text-gray-900">{formatKRW(line.amount)}</span>
+                <div className="mt-1 text-sm text-gray-500">
+                  수량: {line.quantity}
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* 합계 */}
-          <div className="border-t border-gray-200 pt-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">공급가액</span>
-              <span className="text-gray-900">{formatKRW(subtotal)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">부가세 (10%)</span>
-              <span className="text-gray-900">{formatKRW(vat)}</span>
-            </div>
-            <div className="flex justify-between text-base font-bold">
-              <span className="text-gray-900">합계</span>
-              <span className="text-blue-600">{formatKRW(total)}</span>
-            </div>
           </div>
         </div>
       )}
 
       {/* 배송 정보 */}
-      {lines.length > 0 && !showPreview && (
+      {lines.length > 0 && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">배송 정보</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -470,35 +456,33 @@ export default function NewOrderPage() {
         </div>
       )}
 
-      {/* 발주 버튼 */}
+      {/* 액션 버튼 */}
       {lines.length > 0 && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          {!showPreview ? (
-            <button
-              onClick={() => setShowPreview(true)}
-              className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 text-center"
-            >
-              발주 미리보기
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={handleSubmit}
-                disabled={saving}
-                className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 text-center"
-              >
-                {saving ? '발주 중...' : '발주 확정'}
-              </button>
-              <button
-                onClick={() => setShowPreview(false)}
-                className="px-8 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 text-center"
-              >
-                수정
-              </button>
-            </>
-          )}
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-center"
+          >
+            {saving ? '처리 중...' : '견적 요청하기'}
+          </button>
+          <button
+            onClick={handleSaveDraft}
+            disabled={saving}
+            className="px-8 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-center"
+          >
+            임시 저장
+          </button>
         </div>
       )}
     </div>
+  )
+}
+
+export default function NewOrderPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-sm text-gray-500">로딩 중...</div>}>
+      <NewOrderForm />
+    </Suspense>
   )
 }

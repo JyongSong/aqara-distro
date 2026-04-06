@@ -5,6 +5,8 @@ export type UserStatus = 'active' | 'restricted' | 'suspended'
 export type OrderStatus =
   | 'DRAFT'
   | 'SUBMITTED'
+  | 'QUOTE_SENT'
+  | 'ORDER_PLACED'
   | 'APPROVED'
   | 'REJECTED'
   | 'HQ_RECEIVED'
@@ -86,6 +88,7 @@ export interface Order {
   note: string | null
   retailer_total: number
   hq_total: number
+  quote_expires_at: string | null
   submitted_at: string | null
   approved_at: string | null
   approved_by: string | null
@@ -104,18 +107,31 @@ export interface OrderItem {
   product_id: string
   option_code: string | null
   quantity: number
-  retailer_unit_price: number
-  retailer_amount: number
+  retailer_unit_price: number | null
+  retailer_amount: number | null
   hq_unit_price: number | null
   hq_amount: number | null
   created_at: string
   product?: Product
 }
 
+export interface DistributorRetailerProductSetting {
+  id: string
+  distributor_id: string
+  product_id: string
+  moq: number
+  order_unit: number
+  created_at: string
+  updated_at: string
+  product?: Product
+}
+
 // 주문 상태 한국어 라벨
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  DRAFT: '임시저장',
-  SUBMITTED: '발주완료',
+  DRAFT: '견적 작성 중',
+  SUBMITTED: '견적 요청',
+  QUOTE_SENT: '견적 발송',
+  ORDER_PLACED: '발주 확정',
   APPROVED: '승인완료',
   REJECTED: '반려',
   HQ_RECEIVED: '본사접수',
@@ -126,8 +142,10 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 }
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
-  DRAFT: 'bg-gray-100 text-gray-700',
+  DRAFT: 'bg-gray-100 text-gray-600',
   SUBMITTED: 'bg-blue-100 text-blue-700',
+  QUOTE_SENT: 'bg-orange-100 text-orange-700',
+  ORDER_PLACED: 'bg-violet-100 text-violet-700',
   APPROVED: 'bg-green-100 text-green-700',
   REJECTED: 'bg-red-100 text-red-700',
   HQ_RECEIVED: 'bg-purple-100 text-purple-700',
