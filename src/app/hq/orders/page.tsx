@@ -6,11 +6,14 @@ import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
 import { formatKRW, formatDateTime, cn } from '@/lib/utils'
 import Link from 'next/link'
 
+type OrderWithMeta = Order & {
+  retailer: { company_name: string } | null
+  distributor: { company_name: string } | null
+  order_items: { quantity: number }[]
+}
+
 export default function HQOrdersPage() {
-  const [orders, setOrders] = useState<(Order & {
-    retailer: { company_name: string }
-    distributor: { company_name: string }
-  })[]>([])
+  const [orders, setOrders] = useState<OrderWithMeta[]>([])
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [processing, setProcessing] = useState<string | null>(null)
@@ -25,7 +28,12 @@ export default function HQOrdersPage() {
     setLoading(true)
     let query = supabase
       .from('orders')
-      .select('*, retailer:users_profile!retailer_id(company_name), distributor:users_profile!distributor_id(company_name)')
+      .select(`
+        *,
+        retailer:users_profile!retailer_id(company_name),
+        distributor:users_profile!distributor_id(company_name),
+        order_items(quantity)
+      `)
       .order('created_at', { ascending: false })
 
     if (statusFilter !== 'all') {
@@ -33,7 +41,7 @@ export default function HQOrdersPage() {
     }
 
     const { data } = await query
-    if (data) setOrders(data)
+    if (data) setOrders(data as OrderWithMeta[])
     setLoading(false)
   }
 
@@ -41,8 +49,6 @@ export default function HQOrdersPage() {
     setProcessing(orderId)
 
     const updateData: Record<string, unknown> = { status: newStatus }
-    if (newStatus === 'HQ_RECEIVED') updateData.status = 'HQ_RECEIVED'
-    if (newStatus === 'PREPARING') updateData.status = 'PREPARING'
     if (newStatus === 'SHIPPED') {
       updateData.shipped_at = new Date().toISOString()
     }
@@ -56,6 +62,9 @@ export default function HQOrdersPage() {
     switch (status) {
       case 'APPROVED':
         return { label: '본사 접수', nextStatus: 'HQ_RECEIVED', color: 'bg-purple-600 hover:bg-purple-700' }
+      case 'SUBMITTED':
+        // 총판 직발주는 SUBMITTED → HQ_RECEIVED 바로 처리
+        return { label: '본사 접수', nextStatus: 'HQ_RECEIVED', color: 'bg-purple-600 hover:bg-purple-700' }
       case 'HQ_RECEIVED':
         return { label: '출고 준비', nextStatus: 'PREPARING', color: 'bg-yellow-600 hover:bg-yellow-700' }
       case 'PREPARING':
@@ -66,6 +75,15 @@ export default function HQOrdersPage() {
         return null
     }
   }
+
+  const getItemsSummary = (items: { quantity: number }[]) => {
+    const count = items?.length ?? 0
+    const total = items?.reduce((s, i) => s + i.quantity, 0) ?? 0
+    return { count, total }
+  }
+
+  // 총판 직발주 여부 확인
+  const isSelfOrder = (order: OrderWithMeta) => order.retailer_id === order.distributor_id
 
   return (
     <div>
@@ -108,7 +126,8 @@ export default function HQOrdersPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">소매점</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">총판</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">상태</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">소매금액</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">발주 품목</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">발주 수량</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">본사금액</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">발주일</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">처리</th>
@@ -116,7 +135,10 @@ export default function HQOrdersPage() {
               </thead>
               <tbody>
                 {orders.map((order) => {
-                  const action = getNextAction(order.status)
+                  const action = isSelfOrder(order)
+                    ? (order.status === 'SUBMITTED' ? getNextAction('SUBMITTED') : getNextAction(order.status))
+                    : (order.status === 'SUBMITTED' ? null : getNextAction(order.status))
+                  const { count, total } = getItemsSummary(order.order_items)
                   return (
                     <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50">
                       <td className="px-4 py-3">
@@ -124,8 +146,14 @@ export default function HQOrdersPage() {
                           {order.order_number}
                         </Link>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{order.retailer?.company_name}</td>
-                      <td className="px-4 py-3 text-sm text-gray-500">{order.distributor?.company_name}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">
+                        {isSelfOrder(order) ? (
+                          <span className="text-orange-600 font-medium">직발주</span>
+                        ) : (
+                          order.retailer?.company_name ?? '-'
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{order.distributor?.company_name ?? '-'}</td>
                       <td className="px-4 py-3">
                         <span className={cn(
                           'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
@@ -134,7 +162,8 @@ export default function HQOrdersPage() {
                           {ORDER_STATUS_LABELS[order.status]}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-sm text-gray-900">{formatKRW(order.retailer_total)}</td>
+                      <td className="px-4 py-3 text-right text-sm text-gray-900">{count}종</td>
+                      <td className="px-4 py-3 text-right text-sm text-gray-900">{total}EA</td>
                       <td className="px-4 py-3 text-right text-sm text-blue-600">
                         {order.hq_total ? formatKRW(order.hq_total) : '-'}
                       </td>
@@ -162,7 +191,10 @@ export default function HQOrdersPage() {
             {/* Mobile cards */}
             <div className="lg:hidden divide-y divide-gray-100">
               {orders.map((order) => {
-                const action = getNextAction(order.status)
+                const action = isSelfOrder(order)
+                  ? (order.status === 'SUBMITTED' ? getNextAction('SUBMITTED') : getNextAction(order.status))
+                  : (order.status === 'SUBMITTED' ? null : getNextAction(order.status))
+                const { count, total } = getItemsSummary(order.order_items)
                 return (
                   <div key={order.id} className="p-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -177,11 +209,18 @@ export default function HQOrdersPage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">{order.retailer?.company_name} → {order.distributor?.company_name}</span>
+                      <span className="text-gray-500">
+                        {isSelfOrder(order)
+                          ? <span className="text-orange-600 font-medium">직발주</span>
+                          : order.retailer?.company_name
+                        }
+                        {' → '}
+                        {order.distributor?.company_name}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">{formatDateTime(order.created_at)}</span>
-                      <span className="font-medium text-gray-900">{formatKRW(order.retailer_total)}</span>
+                      <span className="text-gray-700">{count}종 · {total}EA</span>
                     </div>
                     {action && (
                       <button
