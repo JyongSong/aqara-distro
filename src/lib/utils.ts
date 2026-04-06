@@ -41,6 +41,34 @@ export function calculateTotalWithVAT(amount: number): number {
   return amount + calculateVAT(amount)
 }
 
+export function numberToKorean(n: number): string {
+  if (n === 0) return '영'
+  const digits = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구']
+  const small = ['', '십', '백', '천']
+  const big = ['', '만', '억', '조']
+
+  function chunk4(num: number): string {
+    let res = ''
+    for (let i = 3; i >= 0; i--) {
+      const d = Math.floor(num / Math.pow(10, i)) % 10
+      if (d === 0) continue
+      res += (d === 1 && i > 0 ? '' : digits[d]) + small[i]
+    }
+    return res
+  }
+
+  let result = ''
+  let temp = n
+  let bi = 0
+  while (temp > 0) {
+    const chunk = temp % 10000
+    if (chunk > 0) result = chunk4(chunk) + big[bi] + result
+    temp = Math.floor(temp / 10000)
+    bi++
+  }
+  return result
+}
+
 export function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')

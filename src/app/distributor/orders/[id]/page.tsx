@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { Order, OrderItem, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
-import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn, escapeHtml } from '@/lib/utils'
+import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn, escapeHtml, numberToKorean } from '@/lib/utils'
 import Link from 'next/link'
 import { use } from 'react'
 
@@ -243,6 +243,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
           <p>공급가액: ${formatKRW(subtotal)}</p>
           <p>부가세 (10%): ${formatKRW(vatAmt)}</p>
           <p><strong>합계: ${formatKRW(totalAmt)}</strong></p>
+          <p style="font-size:12px;color:#666;margin-top:4px">금 ${numberToKorean(totalAmt)}원정</p>
         </div>
         <script>window.onload=function(){window.print()}</script>
       </body></html>
@@ -350,14 +351,20 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
                       <td className="py-3 text-sm text-gray-500">{item.option_code || '-'}</td>
                       <td className="py-3 text-right text-sm text-gray-600">{item.quantity}</td>
                       <td className="py-3 text-right">
-                        <input
-                          type="number"
-                          min="0"
-                          value={priceInputs[item.id] || ''}
-                          onChange={e => setPriceInputs(prev => ({ ...prev, [item.id]: e.target.value }))}
-                          className="w-36 px-2 py-1 border border-gray-300 rounded text-sm text-right focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="0"
-                        />
+                        <div className="relative inline-flex items-center">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={priceInputs[item.id] ? Number(priceInputs[item.id]).toLocaleString('ko-KR') : ''}
+                            onChange={e => {
+                              const raw = e.target.value.replace(/[^0-9]/g, '')
+                              setPriceInputs(prev => ({ ...prev, [item.id]: raw }))
+                            }}
+                            className="w-44 pl-3 pr-9 py-2 border-2 border-gray-300 rounded-lg text-sm text-right font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-400 bg-white"
+                            placeholder="0"
+                          />
+                          <span className="absolute right-3 text-xs text-gray-400 pointer-events-none select-none">원</span>
+                        </div>
                       </td>
                       <td className="py-3 text-right text-sm font-medium text-gray-900">
                         {lineAmount > 0 ? formatKRW(lineAmount) : '-'}
@@ -383,6 +390,11 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
                   <span>합계</span>
                   <span>{formatKRW(calculateTotalWithVAT(liveSubtotal))}</span>
                 </div>
+                {liveSubtotal > 0 && (
+                  <div className="text-right text-xs text-gray-400 mt-1">
+                    금 {numberToKorean(calculateTotalWithVAT(liveSubtotal))}원정
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -490,6 +502,9 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
                   <span>합계</span>
                   <span>{formatKRW(retailerTotalWithVat)}</span>
                 </div>
+                <div className="text-right text-xs text-gray-400 mt-1">
+                  금 {numberToKorean(retailerTotalWithVat)}원정
+                </div>
               </div>
             </div>
           </div>
@@ -575,6 +590,9 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
                 <div className="flex justify-between font-bold text-gray-900 text-base border-t border-gray-200 pt-1 mt-1">
                   <span>합계</span>
                   <span>{formatKRW(retailerTotalWithVat)}</span>
+                </div>
+                <div className="text-right text-xs text-gray-400 mt-1">
+                  금 {numberToKorean(retailerTotalWithVat)}원정
                 </div>
               </div>
             </div>
@@ -761,6 +779,9 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
                   <span>합계</span>
                   <span>{formatKRW(retailerTotalWithVat)}</span>
                 </div>
+                <div className="text-right text-xs text-gray-400 mt-0.5">
+                  금 {numberToKorean(retailerTotalWithVat)}원정
+                </div>
               </div>
               {order.hq_total != null && order.hq_total > 0 && (
                 <div className="space-y-1">
@@ -776,6 +797,9 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
                   <div className="flex justify-between font-bold">
                     <span>합계</span>
                     <span className="text-blue-600">{formatKRW(hqTotalWithVat)}</span>
+                  </div>
+                  <div className="text-right text-xs text-blue-300 mt-0.5">
+                    금 {numberToKorean(hqTotalWithVat)}원정
                   </div>
                 </div>
               )}

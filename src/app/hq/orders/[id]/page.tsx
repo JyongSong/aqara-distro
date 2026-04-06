@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Order, OrderItem, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
-import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn, escapeHtml } from '@/lib/utils'
+import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn, escapeHtml, numberToKorean } from '@/lib/utils'
 import Link from 'next/link'
 import { use } from 'react'
 
@@ -117,6 +117,7 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
           <p>공급가액: ${formatKRW(subtotal)}</p>
           <p>부가세 (10%): ${formatKRW(vatAmt)}</p>
           <p><strong>합계: ${formatKRW(totalAmt)}</strong></p>
+          <p style="font-size:12px;color:#666;margin-top:4px">금 ${numberToKorean(totalAmt)}원정</p>
         </div>
         <script>window.onload=function(){window.print()}</script>
       </body></html>
