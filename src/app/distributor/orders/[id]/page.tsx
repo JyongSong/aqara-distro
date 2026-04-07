@@ -75,10 +75,16 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
     const retailerTotal = updates.reduce((sum, u) => sum + u.retailer_amount, 0)
 
     for (const u of updates) {
-      await supabase.from('order_items').update({
+      const { error: itemErr } = await supabase.from('order_items').update({
         retailer_unit_price: u.retailer_unit_price,
         retailer_amount: u.retailer_amount,
       }).eq('id', u.id)
+      if (itemErr) {
+        console.error('[order_items update error]', itemErr)
+        alert(`단가 저장 실패: ${itemErr.message}`)
+        setProcessing(false)
+        return
+      }
     }
 
     const expiresAt = new Date()
@@ -91,7 +97,8 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
     }).eq('id', order.id)
 
     if (error) {
-      alert('견적 발송에 실패했습니다. 다시 시도해 주세요.')
+      console.error('[orders update error]', error)
+      alert(`견적 발송 실패: ${error.message}`)
       setProcessing(false)
       return
     }
