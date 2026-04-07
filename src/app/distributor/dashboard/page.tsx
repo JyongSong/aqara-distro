@@ -61,7 +61,8 @@ export default function DistributorDashboard() {
         .gte('created_at', startOfMonth.toISOString())
 
       const retailSaleQty = (retailOrders ?? []).reduce(
-        (sum, o) => sum + ((o.order_items as { quantity: number }[] | null) ?? []).reduce((s, i) => s + i.quantity, 0),
+        (sum: number, o: { order_items: { quantity: number }[] | null }) =>
+          sum + ((o.order_items ?? []).reduce((s: number, i: { quantity: number }) => s + i.quantity, 0)),
         0
       )
 
@@ -74,7 +75,8 @@ export default function DistributorDashboard() {
         .gte('created_at', startOfMonth.toISOString())
 
       const selfOrderQty = (selfOrders ?? []).reduce(
-        (sum, o) => sum + ((o.order_items as { quantity: number }[] | null) ?? []).reduce((s, i) => s + i.quantity, 0),
+        (sum: number, o: { order_items: { quantity: number }[] | null }) =>
+          sum + ((o.order_items ?? []).reduce((s: number, i: { quantity: number }) => s + i.quantity, 0)),
         0
       )
 

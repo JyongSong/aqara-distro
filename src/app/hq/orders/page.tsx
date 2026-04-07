@@ -44,15 +44,15 @@ export default function HQOrdersPage() {
 
     const { data } = await query
 
+    const allOrders = (data ?? []) as OrderWithMeta[]
     if (statusFilter === 'all') {
-      // Keep orders that are: APPROVED+ status, OR (SUBMITTED + self-order where retailer_id === distributor_id)
-      const filtered = data?.filter(o =>
+      // APPROVED+ 또는 직발주(SUBMITTED + retailer_id === distributor_id)만 표시
+      setOrders(allOrders.filter((o: OrderWithMeta) =>
         HQ_VISIBLE_STATUSES.includes(o.status) ||
         (o.status === 'SUBMITTED' && o.retailer_id === o.distributor_id)
-      ) ?? []
-      setOrders(filtered as OrderWithMeta[])
+      ))
     } else {
-      setOrders((data ?? []) as OrderWithMeta[])
+      setOrders(allOrders)
     }
 
     setLoading(false)
