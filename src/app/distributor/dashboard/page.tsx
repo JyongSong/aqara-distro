@@ -30,15 +30,14 @@ export default function DistributorDashboard() {
       startOfMonth.setDate(1)
       startOfMonth.setHours(0, 0, 0, 0)
 
-      // 발주확정 대기 (ORDER_PLACED, retailer != self)
+      // 최근 견적/발주 현황 (소매 주문 전체, 최신 10건)
       const { data: placedOrders } = await supabase
         .from('orders')
         .select('*, retailer:users_profile!retailer_id(company_name), order_items(quantity)')
         .eq('distributor_id', profile.id)
-        .eq('status', 'ORDER_PLACED')
         .neq('retailer_id', profile.id)
         .order('created_at', { ascending: false })
-        .limit(20)
+        .limit(10)
 
       if (placedOrders) setPendingOrders(placedOrders as OrderWithRetailer[])
 
@@ -125,25 +124,25 @@ export default function DistributorDashboard() {
         </div>
       </div>
 
-      {/* 소매 발주확정 대기 목록 */}
+      {/* 견적/발주 현황 */}
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg font-semibold text-gray-900">소매 발주확정</h2>
+            <h2 className="text-lg font-semibold text-gray-900">견적/발주 현황</h2>
             {stats.orderPlacedCount > 0 && (
               <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-bold bg-violet-100 text-violet-700">
-                {stats.orderPlacedCount}
+                발주확정 {stats.orderPlacedCount}건
               </span>
             )}
           </div>
-          <Link href="/distributor/orders" className="text-sm text-violet-600 hover:underline">
+          <Link href="/distributor/orders" className="text-sm text-blue-600 hover:underline">
             전체 보기
           </Link>
         </div>
 
         {pendingOrders.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-400 text-sm">
-            발주확정 대기 중인 주문이 없습니다.
+            견적/발주 내역이 없습니다.
           </div>
         ) : (
           <>
@@ -156,7 +155,7 @@ export default function DistributorDashboard() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">상태</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500">수량</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">요청일</th>
-                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500">처리</th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500"></th>
                 </tr>
               </thead>
               <tbody>
@@ -183,9 +182,9 @@ export default function DistributorDashboard() {
                       <td className="px-6 py-3 text-center">
                         <Link
                           href={`/distributor/orders/${order.id}`}
-                          className="inline-flex items-center px-3 py-1 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-full transition-colors"
+                          className="text-xs text-blue-600 hover:underline"
                         >
-                          승인/반려
+                          상세
                         </Link>
                       </td>
                     </tr>
@@ -199,9 +198,9 @@ export default function DistributorDashboard() {
               {pendingOrders.map((order) => {
                 const qty = (order.order_items ?? []).reduce((s, i) => s + i.quantity, 0)
                 return (
-                  <div key={order.id} className="p-4 space-y-2">
+                  <Link key={order.id} href={`/distributor/orders/${order.id}`} className="block p-4 space-y-2 active:bg-gray-50">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-mono text-gray-900">{order.order_number}</span>
+                      <span className="text-sm font-mono text-blue-600">{order.order_number}</span>
                       <span className={cn(
                         'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                         ORDER_STATUS_COLORS[order.status]
@@ -213,16 +212,8 @@ export default function DistributorDashboard() {
                       <span className="text-gray-600">{order.retailer?.company_name ?? '-'}</span>
                       <span className="text-gray-900 font-medium">{qty}EA</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400">{formatDateTime(order.created_at)}</span>
-                      <Link
-                        href={`/distributor/orders/${order.id}`}
-                        className="inline-flex items-center px-3 py-1 text-xs font-medium text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-full transition-colors"
-                      >
-                        승인/반려
-                      </Link>
-                    </div>
-                  </div>
+                    <div className="text-xs text-gray-400">{formatDateTime(order.created_at)}</div>
+                  </Link>
                 )
               })}
             </div>

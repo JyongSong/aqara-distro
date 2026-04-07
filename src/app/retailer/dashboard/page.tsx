@@ -84,14 +84,15 @@ export default function RetailerDashboard() {
           href="/retailer/orders/new"
           className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
         >
-          + 새 발주 작성
+          + 새 견적 요청
         </Link>
       </div>
 
-      {/* 최근 주문 */}
+      {/* 최근 견적/발주 */}
       <div className="bg-white rounded-xl border border-gray-200">
-        <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">최근 발주</h2>
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">최근 견적/발주</h2>
+          <Link href="/retailer/orders" className="text-sm text-blue-600 hover:underline">전체 보기</Link>
         </div>
         {recentOrders.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-400 text-sm">
