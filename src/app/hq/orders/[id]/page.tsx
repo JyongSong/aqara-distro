@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Order, OrderItem, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
 import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn, escapeHtml, numberToKorean } from '@/lib/utils'
@@ -16,7 +16,7 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
   const [items, setItems] = useState<(OrderItem & { product: { name: string; product_code: string; product_url: string | null; consumer_price: number | null } })[]>([])
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const fetchOrder = async () => {

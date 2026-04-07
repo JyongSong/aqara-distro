@@ -1,7 +1,7 @@
 'use client'
 
 import { useAuth } from '@/hooks/useAuth'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
 import { formatKRW, formatDateTime, cn } from '@/lib/utils'
@@ -11,7 +11,7 @@ export default function RetailerDashboard() {
   const { profile } = useAuth()
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
   const [stats, setStats] = useState({ total: 0, pending: 0, shipped: 0 })
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     if (!profile) return

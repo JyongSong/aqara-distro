@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { Product } from '@/lib/types'
@@ -26,7 +26,7 @@ function NewOrderForm() {
   const { profile } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const [products, setProducts] = useState<Product[]>([])
   const [settingsMap, setSettingsMap] = useState<Record<string, { moq: number; order_unit: number }>>({})

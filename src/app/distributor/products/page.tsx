@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { Product, DistributorPriceQuote } from '@/lib/types'
@@ -23,7 +23,7 @@ export default function DistributorProductsPage() {
   const [editUnit, setEditUnit] = useState('')
   const [saving, setSaving] = useState(false)
 
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     if (!profile) return

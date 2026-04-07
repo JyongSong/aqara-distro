@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { Product } from '@/lib/types'
@@ -19,7 +19,7 @@ interface OrderLine {
 export default function DistributorNewOrderPage() {
   const { profile } = useAuth()
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const [products, setProducts] = useState<Product[]>([])
   const [lines, setLines] = useState<OrderLine[]>([])

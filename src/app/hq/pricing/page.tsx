@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { DistributorPriceQuote, Product, UserProfile } from '@/lib/types'
 import { formatKRW, formatDate } from '@/lib/utils'
@@ -14,7 +14,7 @@ export default function HQPricingPage() {
   const [showForm, setShowForm] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const [form, setForm] = useState({
     product_id: '',
