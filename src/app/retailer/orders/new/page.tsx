@@ -85,9 +85,9 @@ function NewOrderForm() {
     }
   }, [searchParams])
 
-  // Reset quantity to MOQ when product changes
+  // Reset quantity to MOQ when product changes OR when products/settings finish loading
   useEffect(() => {
-    if (!selectedProduct) return
+    if (!selectedProduct || products.length === 0) return
     const product = products.find(p => p.id === selectedProduct)
     if (!product) return
     const override = settingsMap[selectedProduct]
@@ -95,7 +95,7 @@ function NewOrderForm() {
     setQuantity(moq)
     setSelectedOption('')
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProduct])
+  }, [selectedProduct, products, settingsMap])
 
   const currentProductObj = products.find(p => p.id === selectedProduct)
   const currentOverride = selectedProduct ? settingsMap[selectedProduct] : undefined
