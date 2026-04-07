@@ -12,6 +12,8 @@ type OrderWithMeta = Order & {
   order_items: { quantity: number }[]
 }
 
+const HQ_VISIBLE_STATUSES = ['APPROVED', 'HQ_RECEIVED', 'PREPARING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
+
 export default function HQOrdersPage() {
   const [orders, setOrders] = useState<OrderWithMeta[]>([])
   const [loading, setLoading] = useState(true)
@@ -41,7 +43,18 @@ export default function HQOrdersPage() {
     }
 
     const { data } = await query
-    if (data) setOrders(data as OrderWithMeta[])
+
+    if (statusFilter === 'all') {
+      // Keep orders that are: APPROVED+ status, OR (SUBMITTED + self-order where retailer_id === distributor_id)
+      const filtered = data?.filter(o =>
+        HQ_VISIBLE_STATUSES.includes(o.status) ||
+        (o.status === 'SUBMITTED' && o.retailer_id === o.distributor_id)
+      ) ?? []
+      setOrders(filtered as OrderWithMeta[])
+    } else {
+      setOrders((data ?? []) as OrderWithMeta[])
+    }
+
     setLoading(false)
   }
 
@@ -94,7 +107,7 @@ export default function HQOrdersPage() {
 
       {/* 필터 */}
       <div className="flex gap-2 mb-6 flex-wrap">
-        {['all', 'SUBMITTED', 'APPROVED', 'HQ_RECEIVED', 'PREPARING', 'SHIPPED', 'DELIVERED', 'COMPLETED'].map((status) => (
+        {['all', 'APPROVED', 'HQ_RECEIVED', 'PREPARING', 'SHIPPED', 'DELIVERED', 'COMPLETED'].map((status) => (
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
