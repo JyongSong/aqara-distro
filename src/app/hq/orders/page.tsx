@@ -44,17 +44,20 @@ export default function HQOrdersPage() {
 
     const { data } = await query
 
+    // 총판 출고 주문은 항상 HQ에서 제외 (fulfillment_type 또는 note 마커)
+    const isHqOrder = (o: OrderWithMeta) =>
+      o.fulfillment_type !== 'distributor' && !o.note?.includes('[총판출고]')
+
     const allOrders = (data ?? []) as OrderWithMeta[]
     if (statusFilter === 'all') {
-      // 총판 출고 주문(fulfillment_type='distributor' 또는 note에 [총판출고] 마커)은 HQ에 표시 안 함
-      setOrders(allOrders.filter((o: OrderWithMeta) => {
-        const isDistFulfill = o.fulfillment_type === 'distributor' || o.note?.includes('[총판출고]')
-        if (isDistFulfill) return false
-        return HQ_VISIBLE_STATUSES.includes(o.status) ||
+      setOrders(allOrders.filter((o: OrderWithMeta) =>
+        isHqOrder(o) && (
+          HQ_VISIBLE_STATUSES.includes(o.status) ||
           (o.status === 'SUBMITTED' && o.retailer_id === o.distributor_id)
-      }))
+        )
+      ))
     } else {
-      setOrders(allOrders)
+      setOrders(allOrders.filter(isHqOrder))
     }
 
     setLoading(false)
