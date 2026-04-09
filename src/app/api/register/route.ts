@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
+const DISTRIBUTOR_CODE_MAP: Record<string, string> = {
+  '0001': '경기열쇠상사',
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password, company_name, contact_name, phone, address } = body
+    const { email, password, company_name, contact_name, phone, address, distributor_code } = body
 
     // Validate required fields
     if (!email || !password || !company_name || !contact_name || !phone || !address) {
@@ -23,6 +27,21 @@ export async function POST(request: NextRequest) {
     }
 
     const adminClient = createAdminClient()
+
+    // Resolve distributor_id from code
+    let distributor_id: string | null = null
+    if (distributor_code && DISTRIBUTOR_CODE_MAP[distributor_code]) {
+      const companyName = DISTRIBUTOR_CODE_MAP[distributor_code]
+      const { data: distProfile } = await adminClient
+        .from('users_profile')
+        .select('id')
+        .eq('role', 'distributor')
+        .eq('company_name', companyName)
+        .single()
+      if (distProfile) {
+        distributor_id = distProfile.id
+      }
+    }
 
     // Create auth user (email_confirm: true skips email verification)
     const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
@@ -53,7 +72,7 @@ export async function POST(request: NextRequest) {
         contact_name,
         phone,
         address,
-        distributor_id: null,
+        distributor_id,
       })
 
     if (profileError) {

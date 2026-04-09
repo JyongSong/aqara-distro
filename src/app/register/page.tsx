@@ -31,6 +31,7 @@ export default function RegisterPage() {
     address_detail: '',
     password: '',
     confirm_password: '',
+    distributor_code: '',
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -110,6 +111,7 @@ export default function RegisterPage() {
         contact_name: form.contact_name,
         phone: form.phone,
         address: fullAddress,
+        distributor_code: form.distributor_code.trim() || null,
       }),
     })
 
@@ -247,6 +249,22 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   placeholder="상세 주소 (동, 호수, 층 등)"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                />
+              </div>
+
+              {/* 총판 코드 */}
+              <div>
+                <label htmlFor="distributor_code" className="block text-sm font-medium text-gray-700 mb-1.5">
+                  총판 코드 <span className="text-gray-400 text-xs font-normal">(선택)</span>
+                </label>
+                <input
+                  id="distributor_code"
+                  name="distributor_code"
+                  type="text"
+                  value={form.distributor_code}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  placeholder="총판에서 받은 코드 입력 (없으면 비워두세요)"
                 />
               </div>
 

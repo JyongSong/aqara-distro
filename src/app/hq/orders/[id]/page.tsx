@@ -10,7 +10,7 @@ import { use } from 'react'
 export default function HQOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const [order, setOrder] = useState<(Order & {
-    retailer: { company_name: string }
+    retailer: { company_name: string; phone: string | null }
     distributor: { company_name: string }
   }) | null>(null)
   const [items, setItems] = useState<(OrderItem & { product: { name: string; product_code: string; product_url: string | null; consumer_price: number | null } })[]>([])
@@ -23,7 +23,7 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
       setLoading(true)
       const { data: orderData } = await supabase
         .from('orders')
-        .select('*, retailer:users_profile!retailer_id(company_name), distributor:users_profile!distributor_id(company_name)')
+        .select('*, retailer:users_profile!retailer_id(company_name, phone), distributor:users_profile!distributor_id(company_name)')
         .eq('id', id)
         .single()
 
@@ -192,6 +192,15 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-sm font-semibold text-gray-500 mb-3">배송 정보</h2>
           <dl className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-gray-500">받는 분</dt>
+              <dd className="text-gray-900 text-right">
+                <span className="font-medium">{order.retailer?.company_name || '-'}</span>
+                {order.retailer?.phone && (
+                  <span className="ml-2 text-gray-500">{order.retailer.phone}</span>
+                )}
+              </dd>
+            </div>
             <div className="flex justify-between">
               <dt className="text-gray-500">배송지</dt>
               <dd className="text-gray-900">{order.shipping_address || '-'}</dd>
