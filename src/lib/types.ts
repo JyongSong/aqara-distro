@@ -83,6 +83,8 @@ export interface Order {
   retailer_id: string
   distributor_id: string
   status: OrderStatus
+  order_type: 'quote' | 'direct'
+  fulfillment_type: 'hq' | 'distributor'
   shipping_address: string | null
   desired_date: string | null
   note: string | null

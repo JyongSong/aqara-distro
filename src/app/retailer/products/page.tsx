@@ -52,6 +52,7 @@ export default function RetailerProductsPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">카테고리</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">소비자가</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">견적요청</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">발주요청</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,6 +101,14 @@ export default function RetailerProductsPage() {
                         견적 요청
                       </Link>
                     </td>
+                    <td className="px-4 py-3 text-center">
+                      <Link
+                        href={`/retailer/orders/new-direct?product_id=${product.id}`}
+                        className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700"
+                      >
+                        발주 요청
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -139,12 +148,18 @@ export default function RetailerProductsPage() {
                         소비자가 {formatKRW(product.consumer_price)}
                       </p>
                     )}
-                    <div className="mt-2">
+                    <div className="mt-2 flex gap-2">
                       <Link
                         href={`/retailer/orders/new?product_id=${product.id}`}
                         className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700"
                       >
                         견적 요청
+                      </Link>
+                      <Link
+                        href={`/retailer/orders/new-direct?product_id=${product.id}`}
+                        className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700"
+                      >
+                        발주 요청
                       </Link>
                     </div>
                   </div>

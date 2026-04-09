@@ -236,21 +236,13 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-sm font-semibold text-gray-500 mb-3">가격 요약</h2>
           <div className="space-y-4">
-            <div>
-              <p className="text-xs text-gray-400 mb-1">소매 발주 금액 (VAT 포함)</p>
-              <p className="text-xl font-bold text-gray-900">{formatKRW(retailerTotal)}</p>
-            </div>
-            {order.hq_total > 0 && (
-              <>
-                <div>
-                  <p className="text-xs text-gray-400 mb-1">본사 공급 금액 (VAT 포함)</p>
-                  <p className="text-xl font-bold text-blue-600">{formatKRW(hqTotal)}</p>
-                </div>
-                <div className="border-t pt-3">
-                  <p className="text-xs text-gray-400 mb-1">총판 마진</p>
-                  <p className="text-lg font-bold text-green-600">{formatKRW(retailerTotal - hqTotal)}</p>
-                </div>
-              </>
+            {order.hq_total > 0 ? (
+              <div>
+                <p className="text-xs text-gray-400 mb-1">본사 공급 금액 (VAT 포함)</p>
+                <p className="text-xl font-bold text-blue-600">{formatKRW(hqTotal)}</p>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">가격 정보 없음</p>
             )}
           </div>
         </div>
@@ -266,8 +258,6 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
               <th className="pb-2 text-left text-xs font-medium text-gray-500">상품명</th>
               <th className="pb-2 text-left text-xs font-medium text-gray-500">옵션</th>
               <th className="pb-2 text-right text-xs font-medium text-gray-500">수량</th>
-              <th className="pb-2 text-right text-xs font-medium text-gray-500">소매단가</th>
-              <th className="pb-2 text-right text-xs font-medium text-gray-500">소매금액</th>
               <th className="pb-2 text-right text-xs font-medium text-gray-500">본사단가</th>
               <th className="pb-2 text-right text-xs font-medium text-gray-500">본사금액</th>
             </tr>
@@ -284,8 +274,6 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
                 </td>
                 <td className="py-3 text-sm text-gray-500">{item.option_code || '-'}</td>
                 <td className="py-3 text-right text-sm text-gray-600">{item.quantity}</td>
-                <td className="py-3 text-right text-sm text-gray-600">{item.retailer_unit_price != null ? formatKRW(item.retailer_unit_price) : '-'}</td>
-                <td className="py-3 text-right text-sm font-medium text-gray-900">{item.retailer_amount != null ? formatKRW(item.retailer_amount) : '-'}</td>
                 <td className="py-3 text-right text-sm text-blue-600">
                   {item.hq_unit_price ? formatKRW(item.hq_unit_price) : '-'}
                 </td>
@@ -298,24 +286,9 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
         </table>
 
         {/* 합계 */}
-        <div className="border-t border-gray-200 pt-4 mt-4 grid grid-cols-2 gap-8">
-          <div className="space-y-1">
-            <p className="text-xs font-medium text-gray-400">소매 기준</p>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">공급가액</span>
-              <span>{formatKRW(order.retailer_total)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-500">부가세</span>
-              <span>{formatKRW(retailerVat)}</span>
-            </div>
-            <div className="flex justify-between font-bold">
-              <span>합계</span>
-              <span>{formatKRW(retailerTotal)}</span>
-            </div>
-          </div>
-          {order.hq_total > 0 && (
-            <div className="space-y-1">
+        {order.hq_total > 0 && (
+          <div className="border-t border-gray-200 pt-4 mt-4 flex justify-end">
+            <div className="space-y-1 min-w-48">
               <p className="text-xs font-medium text-blue-400">본사 기준</p>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-500">공급가액</span>
@@ -329,9 +302,12 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
                 <span>합계</span>
                 <span className="text-blue-600">{formatKRW(hqTotal)}</span>
               </div>
+              <div className="text-right text-xs text-blue-300 mt-0.5">
+                금 {numberToKorean(hqTotal)}원정
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* 액션 버튼 */}

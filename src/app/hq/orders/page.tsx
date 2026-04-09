@@ -46,11 +46,15 @@ export default function HQOrdersPage() {
 
     const allOrders = (data ?? []) as OrderWithMeta[]
     if (statusFilter === 'all') {
-      // APPROVED+ 또는 직발주(SUBMITTED + retailer_id === distributor_id)만 표시
-      setOrders(allOrders.filter((o: OrderWithMeta) =>
-        HQ_VISIBLE_STATUSES.includes(o.status) ||
-        (o.status === 'SUBMITTED' && o.retailer_id === o.distributor_id)
-      ))
+      // 총판 직접 출고(fulfillment_type='distributor') 주문은 SHIPPED 이후만 표시
+      setOrders(allOrders.filter((o: OrderWithMeta) => {
+        const isDistFulfill = o.fulfillment_type === 'distributor'
+        if (isDistFulfill) {
+          return ['SHIPPED', 'DELIVERED', 'COMPLETED'].includes(o.status)
+        }
+        return HQ_VISIBLE_STATUSES.includes(o.status) ||
+          (o.status === 'SUBMITTED' && o.retailer_id === o.distributor_id)
+      }))
     } else {
       setOrders(allOrders)
     }
