@@ -31,7 +31,11 @@ function DirectOrderForm() {
   const [products, setProducts] = useState<Product[]>([])
   const [settingsMap, setSettingsMap] = useState<Record<string, { moq: number; order_unit: number }>>({})
   const [lines, setLines] = useState<OrderLine[]>([])
+  const [shippingAddress, setShippingAddress] = useState('')
+  const [desiredDate, setDesiredDate] = useState('')
+  const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
+
   const [selectedProduct, setSelectedProduct] = useState('')
   const [selectedOption, setSelectedOption] = useState('')
   const [quantity, setQuantity] = useState(1)
@@ -59,6 +63,8 @@ function DirectOrderForm() {
           setSettingsMap(map)
         }
       }
+
+      if (profile.address) setShippingAddress(profile.address)
     }
     fetchData()
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,6 +122,9 @@ function DirectOrderForm() {
     if (!profile || lines.length === 0) return
     setSaving(true)
 
+    // '[직발주]' 마커를 note에 포함 (직발주 식별용)
+    const fullNote = note.trim() ? `[직발주] ${note.trim()}` : '[직발주]'
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -123,9 +132,9 @@ function DirectOrderForm() {
         retailer_id: profile.id,
         distributor_id: profile.distributor_id,
         status: 'DRAFT',
-        shipping_address: profile.address || null,
-        desired_date: null,
-        note: '[직발주]',
+        shipping_address: shippingAddress || null,
+        desired_date: desiredDate || null,
+        note: fullNote,
         retailer_total: 0,
         hq_total: 0,
       })
@@ -198,128 +207,192 @@ function DirectOrderForm() {
     <div>
       <div className="mb-6 sm:mb-8">
         <h1 className="text-xl sm:text-2xl font-bold text-gray-900">발주 요청</h1>
-        <p className="text-sm text-gray-500 mt-1">상품과 수량을 선택하면 총판에 발주 요청이 전달됩니다.</p>
+        <p className="text-sm text-gray-500 mt-1">상품과 수량을 선택하고 총판에 발주를 요청하세요</p>
       </div>
 
-      {/* 상품 선택 */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">상품 추가</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* 상품 선택 */}
+      {/* 상품 선택 섹션 */}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">상품 선택</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">상품</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">상품</label>
             <select
               value={selectedProduct}
               onChange={e => setSelectedProduct(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
             >
-              <option value="">상품 선택</option>
+              <option value="">선택</option>
               {products.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>
 
-          {/* 옵션 */}
-          <div>
-            <label className="block text-xs text-gray-500 mb-1">옵션</label>
-            <select
-              value={selectedOption}
-              onChange={e => setSelectedOption(e.target.value)}
-              disabled={!currentProductObj || !currentProductObj.options?.length}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-50 disabled:text-gray-400"
-            >
-              <option value="">옵션 없음</option>
-              {currentProductObj?.options?.map((o: { code: string; name: string }) => (
-                <option key={o.code} value={o.code}>{o.name}</option>
-              ))}
-            </select>
-          </div>
+          {currentProductObj && currentProductObj.options?.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">옵션</label>
+              <select
+                value={selectedOption}
+                onChange={e => setSelectedOption(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              >
+                <option value="">선택</option>
+                {currentProductObj.options.map((opt: { code: string; name: string }) => (
+                  <option key={opt.code} value={opt.code}>{opt.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
-          {/* 수량 */}
           <div>
-            <label className="block text-xs text-gray-500 mb-1">수량 (MOQ: {moq})</label>
-            <div className="flex items-center gap-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              수량
+              {currentProductObj && (
+                <span className="ml-1.5 text-xs text-gray-400 font-normal">
+                  MOQ: {moq} / 단위: {orderUnit}
+                </span>
+              )}
+            </label>
+            <div className="flex items-center gap-1">
               <button
                 type="button"
-                onClick={() => setQuantity(prev => adjustQuantity(prev - orderUnit))}
-                className="w-9 h-9 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 text-lg font-medium"
-              >−</button>
+                onClick={() => setQuantity(q => adjustQuantity(q - orderUnit))}
+                disabled={!selectedProduct || quantity <= moq}
+                className="w-8 h-9 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                −
+              </button>
               <input
                 type="number"
                 value={quantity}
-                onChange={e => setQuantity(adjustQuantity(parseInt(e.target.value) || moq))}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center focus:ring-2 focus:ring-blue-500 outline-none"
+                onChange={e => {
+                  const raw = parseInt(e.target.value) || moq
+                  setQuantity(adjustQuantity(raw))
+                }}
                 min={moq}
                 step={orderUnit}
+                className="w-14 px-2 py-2 border border-gray-300 rounded-lg text-sm text-center"
               />
               <button
                 type="button"
-                onClick={() => setQuantity(prev => adjustQuantity(prev + orderUnit))}
-                className="w-9 h-9 flex items-center justify-center border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 text-lg font-medium"
-              >+</button>
+                onClick={() => setQuantity(q => q + orderUnit)}
+                disabled={!selectedProduct}
+                className="w-8 h-9 flex items-center justify-center border border-gray-300 rounded-lg text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                +
+              </button>
             </div>
           </div>
-        </div>
 
-        <button
-          type="button"
-          onClick={addLine}
-          disabled={!selectedProduct}
-          className="mt-4 px-5 py-2.5 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          + 품목 추가
-        </button>
+          <button
+            onClick={addLine}
+            disabled={!selectedProduct}
+            className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            추가
+          </button>
+        </div>
       </div>
 
-      {/* 품목 리스트 */}
+      {/* 발주 품목 목록 */}
       {lines.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">발주 품목</h2>
-          <table className="w-full">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">발주 품목</h2>
+
+          {/* Desktop table */}
+          <table className="w-full mb-4 hidden sm:table">
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="pb-2 text-left text-xs font-medium text-gray-500">상품명</th>
                 <th className="pb-2 text-right text-xs font-medium text-gray-500">수량</th>
-                <th className="pb-2 text-right text-xs font-medium text-gray-500">삭제</th>
+                <th className="pb-2 text-center text-xs font-medium text-gray-500 w-16"></th>
               </tr>
             </thead>
             <tbody>
               {lines.map((line, i) => (
                 <tr key={i} className="border-b border-gray-50">
                   <td className="py-3 text-sm text-gray-900">{line.product_name}</td>
-                  <td className="py-3 text-right text-sm text-gray-700 font-medium">{line.quantity}</td>
-                  <td className="py-3 text-right">
-                    <button
-                      onClick={() => removeLine(i)}
-                      className="text-red-400 hover:text-red-600 text-sm"
-                    >
-                      삭제
-                    </button>
+                  <td className="py-3 text-right text-sm text-gray-600">{line.quantity}</td>
+                  <td className="py-3 text-center">
+                    <button onClick={() => removeLine(i)} className="text-red-500 text-xs hover:underline">삭제</button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-3 mb-4">
+            {lines.map((line, i) => (
+              <div key={i} className="border border-gray-100 rounded-lg p-3">
+                <div className="flex items-start justify-between">
+                  <span className="text-sm font-medium text-gray-900">{line.product_name}</span>
+                  <button onClick={() => removeLine(i)} className="text-red-500 text-xs hover:underline ml-2 shrink-0">삭제</button>
+                </div>
+                <div className="mt-1 text-sm text-gray-500">수량: {line.quantity}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* 발주 버튼 */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={handleSubmit}
-          disabled={saving || lines.length === 0}
-          className="px-8 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving ? '처리 중...' : '발주 요청'}
-        </button>
-        <button
-          onClick={() => router.back()}
-          className="px-6 py-3 text-gray-500 hover:text-gray-700 text-sm"
-        >
-          취소
-        </button>
-      </div>
+      {/* 배송 정보 */}
+      {lines.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">배송 정보</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">배송지</label>
+              <input
+                type="text"
+                value={shippingAddress}
+                onChange={e => setShippingAddress(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                placeholder="배송지 주소"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">희망 납기일</label>
+              <input
+                type="date"
+                value={desiredDate}
+                onChange={e => setDesiredDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              />
+            </div>
+          </div>
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">비고</label>
+            <textarea
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              placeholder="요청사항을 입력하세요"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 액션 버튼 */}
+      {lines.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="px-8 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-center"
+          >
+            {saving ? '처리 중...' : '발주 요청하기'}
+          </button>
+          <button
+            onClick={() => router.back()}
+            disabled={saving}
+            className="px-8 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed text-center"
+          >
+            취소
+          </button>
+        </div>
+      )}
     </div>
   )
 }

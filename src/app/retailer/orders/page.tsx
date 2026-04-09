@@ -9,6 +9,13 @@ import Link from 'next/link'
 
 type OrderWithItems = Order & { order_items: { quantity: number }[] | null }
 
+function getDisplayLabel(order: OrderWithItems): string {
+  if (order.status === 'SUBMITTED' && (order.order_type === 'direct' || order.note?.startsWith('[직발주]'))) {
+    return '발주 요청'
+  }
+  return ORDER_STATUS_LABELS[order.status]
+}
+
 const STATUS_FILTERS = [
   'all',
   'DRAFT',
@@ -132,7 +139,7 @@ export default function RetailerOrdersPage() {
                         'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                         ORDER_STATUS_COLORS[order.status]
                       )}>
-                        {ORDER_STATUS_LABELS[order.status]}
+                        {getDisplayLabel(order)}
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right text-sm text-gray-600">

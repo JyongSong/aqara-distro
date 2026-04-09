@@ -175,26 +175,55 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
     setProcessing(false)
   }
 
-  // ── 정지 / 삭제 ────────────────────────────────────────────────────────────
+  // ── 반려 / 삭제 ────────────────────────────────────────────────────────────
 
-  const handleStop = async () => {
-    if (!order || !confirm('이 발주 건을 정지하시겠습니까?')) return
+  const handleRejectOrder = async () => {
+    if (!order) return
+    const reason = window.prompt('반려 사유를 입력하세요 (선택사항):')
+    if (reason === null) return // 취소 클릭
     setProcessing(true)
+    const noteText = reason.trim()
+      ? `[반려] ${reason.trim()}`
+      : '[반려]'
     const { error } = await supabase.from('orders').update({
       status: 'REJECTED',
-      note: `[정지됨] ${order.note || ''}`.trim(),
+      note: noteText,
     }).eq('id', order.id)
-    if (error) { alert('정지 처리에 실패했습니다.'); setProcessing(false); return }
-    setOrder({ ...order, status: 'REJECTED' })
+    if (error) { alert('반려 처리에 실패했습니다.'); setProcessing(false); return }
+    setOrder({ ...order, status: 'REJECTED', note: noteText })
     setProcessing(false)
   }
 
   const handleDelete = async () => {
     if (!order || !confirm('이 발주 건을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) return
     setProcessing(true)
-    await supabase.from('order_items').delete().eq('order_id', order.id)
-    const { error } = await supabase.from('orders').delete().eq('id', order.id)
-    if (error) { alert('삭제에 실패했습니다.'); setProcessing(false); return }
+
+    // 1. order_items 먼저 삭제
+    const { error: itemsError } = await supabase
+      .from('order_items')
+      .delete()
+      .eq('order_id', order.id)
+
+    if (itemsError) {
+      console.error('[delete order_items error]', itemsError)
+      alert(`품목 삭제 실패: ${itemsError.message}\nSQL 정책 추가가 필요합니다.`)
+      setProcessing(false)
+      return
+    }
+
+    // 2. order 삭제
+    const { error: orderError } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', order.id)
+
+    if (orderError) {
+      console.error('[delete order error]', orderError)
+      alert(`삭제 실패: ${orderError.message}\nSQL 정책 추가가 필요합니다.`)
+      setProcessing(false)
+      return
+    }
+
     window.location.href = '/distributor/orders'
   }
 
@@ -281,20 +310,19 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
 
   const StopDeleteActions = () => (
     <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">
-      <span className="text-xs text-gray-400 mr-1">관리:</span>
       <button
-        onClick={handleStop}
+        onClick={handleRejectOrder}
         disabled={processing}
         className="px-4 py-2 text-xs bg-amber-50 text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-100 disabled:opacity-50"
       >
-        ⛔ 정지
+        반려
       </button>
       <button
         onClick={handleDelete}
         disabled={processing}
         className="px-4 py-2 text-xs bg-red-50 text-red-600 border border-red-200 rounded-lg hover:bg-red-100 disabled:opacity-50"
       >
-        🗑 삭제
+        삭제
       </button>
     </div>
   )
