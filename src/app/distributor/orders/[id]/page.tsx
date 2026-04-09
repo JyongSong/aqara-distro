@@ -102,7 +102,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
     if (!order || !profile) return
     setProcessing(true)
 
-    // Calculate HQ prices (for ORDER_PLACED; direct orders skip this)
+    // Calculate HQ prices
     const today = new Date().toISOString().split('T')[0]
     let hqTotal = 0
     const hqUpdates: { id: string; hq_unit_price: number; hq_amount: number }[] = []
@@ -127,20 +127,43 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       await supabase.from('order_items').update({ hq_unit_price: u.hq_unit_price, hq_amount: u.hq_amount }).eq('id', u.id)
     }
 
-    const { error } = await supabase.from('orders').update({
+    // fulfillment_type 컬럼이 없을 수 있으므로 note 마커로 fallback 저장
+    const existingNote = order.note || ''
+    const noteWithoutMarker = existingNote.replace(/\s*\[총판출고\]|\s*\[본사출고\]/g, '').trim()
+    const fulfillmentMarker = fulfillmentType === 'distributor' ? '[총판출고]' : '[본사출고]'
+    const newNote = noteWithoutMarker ? `${noteWithoutMarker} ${fulfillmentMarker}` : fulfillmentMarker
+
+    // 먼저 fulfillment_type 컬럼 포함해서 시도
+    let { error } = await supabase.from('orders').update({
       status: 'APPROVED',
       hq_total: hqTotal,
       fulfillment_type: fulfillmentType,
-      approved_at: new Date().toISOString(),
-      approved_by: profile.id,
+      note: newNote,
     }).eq('id', order.id)
 
+    // 컬럼이 없어서 실패하면 note만으로 재시도
     if (error) {
-      alert('승인 처리에 실패했습니다. 다시 시도해 주세요.')
+      const { error: error2 } = await supabase.from('orders').update({
+        status: 'APPROVED',
+        hq_total: hqTotal,
+        note: newNote,
+      }).eq('id', order.id)
+      error = error2
+    }
+
+    if (error) {
+      console.error('[approve error]', error)
+      alert(`승인 처리에 실패했습니다: ${error.message}`)
       setProcessing(false)
       return
     }
-    setOrder({ ...order, status: 'APPROVED', hq_total: hqTotal, fulfillment_type: fulfillmentType, approved_at: new Date().toISOString() })
+    setOrder({
+      ...order,
+      status: 'APPROVED',
+      hq_total: hqTotal,
+      fulfillment_type: fulfillmentType,
+      note: newNote,
+    })
     setItems(items.map(item => {
       const u = hqUpdates.find(x => x.id === item.id)
       return u ? { ...item, hq_unit_price: u.hq_unit_price, hq_amount: u.hq_amount } : item
@@ -281,8 +304,8 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
   if (!order) return <div className="text-gray-400 text-sm">주문을 찾을 수 없습니다.</div>
 
   // order_type/fulfillment_type 컬럼이 없는 경우 note 마커로 fallback
-  const isDirect = order.order_type === 'direct' || (order.note?.startsWith('[직발주]') ?? false)
-  const isDistFulfillment = order.fulfillment_type === 'distributor'
+  const isDirect = order.order_type === 'direct' || (order.note?.includes('[직발주]') ?? false)
+  const isDistFulfillment = order.fulfillment_type === 'distributor' || (order.note?.includes('[총판출고]') ?? false)
   const isPreApproved = ['SUBMITTED', 'QUOTE_SENT', 'ORDER_PLACED'].includes(order.status)
 
   const retailerVat = calculateVAT(order.retailer_total)
