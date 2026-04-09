@@ -28,7 +28,7 @@ export default function HQDashboard() {
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-      type ShippedOrder = { retailer_total: number; shipped_at: string | null }
+      type ShippedOrder = { hq_total: number | null; shipped_at: string | null }
 
       const [
         { count: totalOrders },
@@ -47,19 +47,20 @@ export default function HQDashboard() {
         supabase.from('users_profile').select('*', { count: 'exact', head: true }).eq('role', 'distributor'),
         supabase.from('users_profile').select('*', { count: 'exact', head: true }).eq('role', 'retailer').eq('status', 'active'),
         // 매출: 총판출고 주문 제외
-        supabase.from('orders').select('retailer_total, shipped_at')
+        // 본사 매출 = hq_total 기준 (본사→총판 공급가, 부가세 미포함)
+        supabase.from('orders').select('hq_total, shipped_at')
           .eq('status', 'SHIPPED')
           .neq('fulfillment_type', 'distributor'),
       ])
 
       const orders: ShippedOrder[] = shippedOrders ?? []
-      const totalSales = orders.reduce((s: number, o: ShippedOrder) => s + (o.retailer_total || 0), 0)
+      const totalSales = orders.reduce((s: number, o: ShippedOrder) => s + (o.hq_total || 0), 0)
       const monthSales = orders
         .filter((o: ShippedOrder) => o.shipped_at && o.shipped_at >= monthStart)
-        .reduce((s: number, o: ShippedOrder) => s + (o.retailer_total || 0), 0)
+        .reduce((s: number, o: ShippedOrder) => s + (o.hq_total || 0), 0)
       const todaySales = orders
         .filter((o: ShippedOrder) => o.shipped_at && o.shipped_at >= todayStart)
-        .reduce((s: number, o: ShippedOrder) => s + (o.retailer_total || 0), 0)
+        .reduce((s: number, o: ShippedOrder) => s + (o.hq_total || 0), 0)
 
       setStats({
         totalOrders: totalOrders || 0,
