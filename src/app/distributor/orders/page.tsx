@@ -10,7 +10,7 @@ import Link from 'next/link'
 type Tab = 'retailer' | 'hq'
 
 function getDisplayLabel(order: Order): string {
-  if (order.status === 'SUBMITTED' && (order.order_type === 'direct' || order.note?.startsWith('[직발주]'))) {
+  if (order.status === 'SUBMITTED' && order.order_type === 'direct') {
     return '발주 요청'
   }
   return ORDER_STATUS_LABELS[order.status]

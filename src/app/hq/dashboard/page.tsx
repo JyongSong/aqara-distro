@@ -28,35 +28,31 @@ export default function HQDashboard() {
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-      type HqOrder = { fulfillment_type: string | null; note: string | null }
-      type ShippedOrder = HqOrder & { retailer_total: number; shipped_at: string | null }
-      type PendingOrder = HqOrder & { id: string }
-
-      const isHqOrder = (o: HqOrder) =>
-        o.fulfillment_type !== 'distributor' && !o.note?.includes('[총판출고]')
+      type ShippedOrder = { retailer_total: number; shipped_at: string | null }
 
       const [
         { count: totalOrders },
-        { data: pendingRaw },
+        { count: pendingShipment },
         { count: products },
         { count: distributors },
         { count: activeRetailers },
         { data: shippedOrders },
       ] = await Promise.all([
         supabase.from('orders').select('*', { count: 'exact', head: true }),
-        // 출고대기: 총판출고 주문 제외를 위해 note 포함해서 가져옴
-        supabase.from('orders').select('id, fulfillment_type, note').in('status', ['APPROVED', 'HQ_RECEIVED', 'PREPARING']),
+        // 출고대기: 총판출고 주문 제외 (fulfillment_type 컬럼으로 필터)
+        supabase.from('orders').select('*', { count: 'exact', head: true })
+          .in('status', ['APPROVED', 'HQ_RECEIVED', 'PREPARING'])
+          .neq('fulfillment_type', 'distributor'),
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('users_profile').select('*', { count: 'exact', head: true }).eq('role', 'distributor'),
         supabase.from('users_profile').select('*', { count: 'exact', head: true }).eq('role', 'retailer').eq('status', 'active'),
-        supabase.from('orders').select('retailer_total, shipped_at, fulfillment_type, note').eq('status', 'SHIPPED'),
+        // 매출: 총판출고 주문 제외
+        supabase.from('orders').select('retailer_total, shipped_at')
+          .eq('status', 'SHIPPED')
+          .neq('fulfillment_type', 'distributor'),
       ])
 
-      // 출고대기: 총판 출고 주문 제외
-      const pendingShipment = (pendingRaw ?? []).filter((o: PendingOrder) => isHqOrder(o)).length
-
-      // 매출: 총판 출고 주문 제외
-      const orders: ShippedOrder[] = (shippedOrders ?? []).filter((o: ShippedOrder) => isHqOrder(o))
+      const orders: ShippedOrder[] = shippedOrders ?? []
       const totalSales = orders.reduce((s: number, o: ShippedOrder) => s + (o.retailer_total || 0), 0)
       const monthSales = orders
         .filter((o: ShippedOrder) => o.shipped_at && o.shipped_at >= monthStart)
@@ -67,7 +63,7 @@ export default function HQDashboard() {
 
       setStats({
         totalOrders: totalOrders || 0,
-        pendingShipment,
+        pendingShipment: pendingShipment || 0,
         products: products || 0,
         distributors: distributors || 0,
         activeRetailers: activeRetailers || 0,

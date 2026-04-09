@@ -122,9 +122,6 @@ function DirectOrderForm() {
     if (!profile || lines.length === 0) return
     setSaving(true)
 
-    // '[직발주]' 마커를 note에 포함 (직발주 식별용)
-    const fullNote = note.trim() ? `[직발주] ${note.trim()}` : '[직발주]'
-
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -132,9 +129,10 @@ function DirectOrderForm() {
         retailer_id: profile.id,
         distributor_id: profile.distributor_id,
         status: 'DRAFT',
+        order_type: 'direct',
         shipping_address: shippingAddress || null,
         desired_date: desiredDate || null,
-        note: fullNote,
+        note: note.trim() || null,
         retailer_total: 0,
         hq_total: 0,
       })

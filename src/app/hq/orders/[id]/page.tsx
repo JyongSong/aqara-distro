@@ -149,7 +149,7 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
   const hqTotal = order.hq_total ? calculateTotalWithVAT(order.hq_total) : 0
 
   // 총판 출고 주문은 HQ가 처리하지 않음
-  const isDistFulfill = order.fulfillment_type === 'distributor' || order.note?.includes('[총판출고]')
+  const isDistFulfill = order.fulfillment_type === 'distributor'
   const action = isDistFulfill ? null : getNextAction(order.status)
 
   return (
@@ -208,10 +208,10 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
               <dt className="text-gray-500">배송지</dt>
               <dd className="text-gray-900">{order.shipping_address || '-'}</dd>
             </div>
-            {order.note && order.note.replace(/\[총판출고\]|\[본사출고\]|\[직발주\]/g, '').trim() && (
+            {order.note && (
               <div className="flex justify-between">
                 <dt className="text-gray-500">비고</dt>
-                <dd className="text-gray-900">{order.note.replace(/\[총판출고\]|\[본사출고\]|\[직발주\]/g, '').trim()}</dd>
+                <dd className="text-gray-900">{order.note}</dd>
               </div>
             )}
             {order.approved_at && (

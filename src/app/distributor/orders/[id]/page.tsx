@@ -127,29 +127,11 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       await supabase.from('order_items').update({ hq_unit_price: u.hq_unit_price, hq_amount: u.hq_amount }).eq('id', u.id)
     }
 
-    // fulfillment_type 컬럼이 없을 수 있으므로 note 마커로 fallback 저장
-    const existingNote = order.note || ''
-    const noteWithoutMarker = existingNote.replace(/\s*\[총판출고\]|\s*\[본사출고\]/g, '').trim()
-    const fulfillmentMarker = fulfillmentType === 'distributor' ? '[총판출고]' : '[본사출고]'
-    const newNote = noteWithoutMarker ? `${noteWithoutMarker} ${fulfillmentMarker}` : fulfillmentMarker
-
-    // 먼저 fulfillment_type 컬럼 포함해서 시도
-    let { error } = await supabase.from('orders').update({
+    const { error } = await supabase.from('orders').update({
       status: 'APPROVED',
       hq_total: hqTotal,
       fulfillment_type: fulfillmentType,
-      note: newNote,
     }).eq('id', order.id)
-
-    // 컬럼이 없어서 실패하면 note만으로 재시도
-    if (error) {
-      const { error: error2 } = await supabase.from('orders').update({
-        status: 'APPROVED',
-        hq_total: hqTotal,
-        note: newNote,
-      }).eq('id', order.id)
-      error = error2
-    }
 
     if (error) {
       console.error('[approve error]', error)
@@ -162,7 +144,6 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       status: 'APPROVED',
       hq_total: hqTotal,
       fulfillment_type: fulfillmentType,
-      note: newNote,
     })
     setItems(items.map(item => {
       const u = hqUpdates.find(x => x.id === item.id)
@@ -303,9 +284,8 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
   if (loading) return <div className="text-gray-400 text-sm">로딩 중...</div>
   if (!order) return <div className="text-gray-400 text-sm">주문을 찾을 수 없습니다.</div>
 
-  // order_type/fulfillment_type 컬럼이 없는 경우 note 마커로 fallback
-  const isDirect = order.order_type === 'direct' || (order.note?.includes('[직발주]') ?? false)
-  const isDistFulfillment = order.fulfillment_type === 'distributor' || (order.note?.includes('[총판출고]') ?? false)
+  const isDirect = order.order_type === 'direct'
+  const isDistFulfillment = order.fulfillment_type === 'distributor'
   const isPreApproved = ['SUBMITTED', 'QUOTE_SENT', 'ORDER_PLACED'].includes(order.status)
 
   const retailerVat = calculateVAT(order.retailer_total)

@@ -44,9 +44,8 @@ export default function HQOrdersPage() {
 
     const { data } = await query
 
-    // 총판 출고 주문은 항상 HQ에서 제외 (fulfillment_type 또는 note 마커)
-    const isHqOrder = (o: OrderWithMeta) =>
-      o.fulfillment_type !== 'distributor' && !o.note?.includes('[총판출고]')
+    // 총판 출고 주문은 항상 HQ에서 제외
+    const isHqOrder = (o: OrderWithMeta) => o.fulfillment_type !== 'distributor'
 
     const allOrders = (data ?? []) as OrderWithMeta[]
     if (statusFilter === 'all') {
