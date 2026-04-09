@@ -251,7 +251,8 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
   if (loading) return <div className="text-gray-400 text-sm">로딩 중...</div>
   if (!order) return <div className="text-gray-400 text-sm">주문을 찾을 수 없습니다.</div>
 
-  const isDirect = order.order_type === 'direct'
+  // order_type/fulfillment_type 컬럼이 없는 경우 note 마커로 fallback
+  const isDirect = order.order_type === 'direct' || (order.note?.startsWith('[직발주]') ?? false)
   const isDistFulfillment = order.fulfillment_type === 'distributor'
   const isPreApproved = ['SUBMITTED', 'QUOTE_SENT', 'ORDER_PLACED'].includes(order.status)
 

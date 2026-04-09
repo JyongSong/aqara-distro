@@ -17,7 +17,8 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
     { label: '대시보드', href: '/retailer/dashboard', icon: '📊' },
     { label: '상품 리스트', href: '/retailer/products', icon: '📦' },
     { label: '견적/발주 관리', href: '/retailer/orders', icon: '📋' },
-    { label: '견적 요청', href: '/retailer/orders/new', icon: '➕' },
+    { label: '견적 요청', href: '/retailer/orders/new', icon: '📝' },
+    { label: '발주 요청', href: '/retailer/orders/new-direct', icon: '🚀' },
   ],
   distributor: [
     { label: '대시보드', href: '/distributor/dashboard', icon: '📊' },

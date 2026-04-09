@@ -125,10 +125,9 @@ function DirectOrderForm() {
         status: 'DRAFT',
         shipping_address: profile.address || null,
         desired_date: null,
-        note: null,
+        note: '[직발주]',
         retailer_total: 0,
         hq_total: 0,
-        order_type: 'direct',
       })
       .select()
       .single()
