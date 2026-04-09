@@ -41,11 +41,14 @@ export default function HQDashboard() {
         supabase.from('products').select('*', { count: 'exact', head: true }).eq('is_active', true),
         supabase.from('users_profile').select('*', { count: 'exact', head: true }).eq('role', 'distributor'),
         supabase.from('users_profile').select('*', { count: 'exact', head: true }).eq('role', 'retailer').eq('status', 'active'),
-        supabase.from('orders').select('retailer_total, shipped_at').eq('status', 'SHIPPED'),
+        supabase.from('orders').select('retailer_total, shipped_at, fulfillment_type, note').eq('status', 'SHIPPED'),
       ])
 
-      type ShippedOrder = { retailer_total: number; shipped_at: string | null }
-      const orders: ShippedOrder[] = shippedOrders ?? []
+      type ShippedOrder = { retailer_total: number; shipped_at: string | null; fulfillment_type: string | null; note: string | null }
+      // 총판 출고 주문은 HQ 매출에서 제외
+      const orders: ShippedOrder[] = (shippedOrders ?? []).filter(
+        (o: ShippedOrder) => o.fulfillment_type !== 'distributor' && !o.note?.includes('[총판출고]')
+      )
       const totalSales = orders.reduce((s: number, o: ShippedOrder) => s + (o.retailer_total || 0), 0)
       const monthSales = orders
         .filter((o: ShippedOrder) => o.shipped_at && o.shipped_at >= monthStart)

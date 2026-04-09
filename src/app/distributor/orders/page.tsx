@@ -202,7 +202,7 @@ export default function DistributorOrdersPage() {
                       'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                       ORDER_STATUS_COLORS[order.status]
                     )}>
-                      {ORDER_STATUS_LABELS[order.status]}
+                      {getDisplayLabel(order)}
                     </span>
                   </div>
                   {tab === 'retailer' && (

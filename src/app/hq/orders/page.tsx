@@ -46,12 +46,10 @@ export default function HQOrdersPage() {
 
     const allOrders = (data ?? []) as OrderWithMeta[]
     if (statusFilter === 'all') {
-      // 총판 직접 출고(fulfillment_type='distributor') 주문은 SHIPPED 이후만 표시
+      // 총판 출고 주문(fulfillment_type='distributor' 또는 note에 [총판출고] 마커)은 HQ에 표시 안 함
       setOrders(allOrders.filter((o: OrderWithMeta) => {
-        const isDistFulfill = o.fulfillment_type === 'distributor'
-        if (isDistFulfill) {
-          return ['SHIPPED', 'DELIVERED', 'COMPLETED'].includes(o.status)
-        }
+        const isDistFulfill = o.fulfillment_type === 'distributor' || o.note?.includes('[총판출고]')
+        if (isDistFulfill) return false
         return HQ_VISIBLE_STATUSES.includes(o.status) ||
           (o.status === 'SUBMITTED' && o.retailer_id === o.distributor_id)
       }))
