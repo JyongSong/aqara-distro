@@ -35,7 +35,7 @@ function LoginForm() {
 
     setLoading(true)
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
+    const { data, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
@@ -44,6 +44,14 @@ function LoginForm() {
       setFormError('이메일 또는 비밀번호가 올바르지 않습니다.')
       setLoading(false)
       return
+    }
+
+    // 로그인 기록 저장
+    if (data.user) {
+      await supabase.from('login_logs').insert({
+        user_id: data.user.id,
+        email: data.user.email,
+      })
     }
 
     router.push('/')
@@ -112,6 +120,12 @@ function LoginForm() {
             >
               {loading ? '로그인 중...' : '로그인'}
             </button>
+
+            <div className="text-center">
+              <Link href="/forgot-password" className="text-sm text-gray-500 hover:text-blue-600 hover:underline">
+                비밀번호를 잊으셨나요?
+              </Link>
+            </div>
           </form>
 
           <p className="text-center text-sm text-gray-600 mt-5">

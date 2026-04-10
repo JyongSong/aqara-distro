@@ -19,6 +19,7 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
     { label: '견적/발주 관리', href: '/retailer/orders', icon: '📋' },
     { label: '견적 요청', href: '/retailer/orders/new', icon: '📝' },
     { label: '발주 요청', href: '/retailer/orders/new-direct', icon: '🚀' },
+    { label: '계정 설정', href: '/retailer/settings', icon: '⚙️' },
   ],
   distributor: [
     { label: '대시보드', href: '/distributor/dashboard', icon: '📊' },
@@ -27,6 +28,7 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
     { label: '발주 관리', href: '/distributor/orders', icon: '📋' },
     { label: '본사 발주', href: '/distributor/orders/new', icon: '➕' },
     { label: '단가 관리', href: '/distributor/pricing', icon: '💰' },
+    { label: '계정 설정', href: '/distributor/settings', icon: '⚙️' },
   ],
   hq: [
     { label: '대시보드', href: '/hq/dashboard', icon: '📊' },
@@ -34,6 +36,7 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
     { label: '상품 관리', href: '/hq/products', icon: '📦' },
     { label: '단가 관리', href: '/hq/pricing', icon: '💰' },
     { label: '사용자 관리', href: '/hq/users', icon: '👥' },
+    { label: '계정 설정', href: '/hq/settings', icon: '⚙️' },
   ],
 }
 
