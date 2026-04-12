@@ -47,9 +47,9 @@ export default function HQDashboard() {
         supabase.from('users_profile').select('*', { count: 'exact', head: true }).eq('role', 'distributor'),
         supabase.from('users_profile').select('*', { count: 'exact', head: true }).eq('role', 'retailer').eq('status', 'active'),
         // 매출: 총판출고 주문 제외
-        // 본사 매출 = hq_total 기준 (본사→총판 공급가, 부가세 미포함)
+        // 본사 매출 = hq_total 기준, 출고완료/수령완료/완료 포함
         supabase.from('orders').select('hq_total, shipped_at')
-          .eq('status', 'SHIPPED')
+          .in('status', ['SHIPPED', 'DELIVERED', 'COMPLETED'])
           .neq('fulfillment_type', 'distributor'),
       ])
 
