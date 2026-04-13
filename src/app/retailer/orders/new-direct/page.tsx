@@ -4,7 +4,11 @@ import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { Product } from '@/lib/types'
-import { generateOrderNumber } from '@/lib/utils'
+async function fetchOrderNumber(): Promise<string> {
+  const res = await fetch('/api/orders/generate-number')
+  const data = await res.json()
+  return data.order_number
+}
 import { useRouter, useSearchParams } from 'next/navigation'
 
 interface OrderLine {
@@ -125,7 +129,7 @@ function DirectOrderForm() {
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
-        order_number: generateOrderNumber(),
+        order_number: await fetchOrderNumber(),
         retailer_id: profile.id,
         distributor_id: profile.distributor_id,
         status: 'DRAFT',

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { Product } from '@/lib/types'
-import { formatKRW, generateOrderNumber, calculateVAT, calculateTotalWithVAT } from '@/lib/utils'
+import { formatKRW, calculateVAT, calculateTotalWithVAT } from '@/lib/utils'
 import { useRouter } from 'next/navigation'
 
 interface OrderLine {
@@ -159,7 +159,8 @@ export default function DistributorNewOrderPage() {
     if (!profile || lines.length === 0) return
     setSaving(true)
 
-    const orderNumber = generateOrderNumber()
+    const res = await fetch('/api/orders/generate-number')
+    const { order_number: orderNumber } = await res.json()
 
     // 1단계: DRAFT로 생성
     const { data: order, error: orderError } = await supabase

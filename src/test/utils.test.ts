@@ -6,7 +6,6 @@ import {
   numberToKorean,
   cn,
   escapeHtml,
-  generateOrderNumber,
 } from '@/lib/utils'
 
 // ── formatKRW ─────────────────────────────────────────────────────────────────
@@ -130,16 +129,3 @@ describe('escapeHtml', () => {
   })
 })
 
-// ── generateOrderNumber ───────────────────────────────────────────────────────
-
-describe('generateOrderNumber', () => {
-  it('matches format ORD-YYMMDD-XXXX', () => {
-    const num = generateOrderNumber()
-    expect(num).toMatch(/^ORD-\d{6}-[A-Z0-9]{4}$/)
-  })
-
-  it('generates unique numbers', () => {
-    const nums = new Set(Array.from({ length: 20 }, () => generateOrderNumber()))
-    expect(nums.size).toBeGreaterThan(15) // very low collision probability
-  })
-})
