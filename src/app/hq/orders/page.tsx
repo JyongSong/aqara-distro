@@ -19,6 +19,7 @@ export default function HQOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [processing, setProcessing] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
@@ -102,11 +103,43 @@ export default function HQOrdersPage() {
   // 총판 직발주 여부 확인
   const isSelfOrder = (order: OrderWithMeta) => order.retailer_id === order.distributor_id
 
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selected.size === orders.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(orders.map(o => o.id)))
+    }
+  }
+
+  const handleBatchExport = () => {
+    if (selected.size === 0) return
+    const ids = Array.from(selected).join(',')
+    window.location.href = `/api/hq/orders/export-batch?ids=${ids}`
+  }
+
   return (
     <div>
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">주문 관리</h1>
-        <p className="text-sm text-gray-500 mt-1">전체 주문 현황 확인 및 출고 처리</p>
+      <div className="mb-6 sm:mb-8 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">주문 관리</h1>
+          <p className="text-sm text-gray-500 mt-1">전체 주문 현황 확인 및 출고 처리</p>
+        </div>
+        {selected.size > 0 && (
+          <button
+            onClick={handleBatchExport}
+            className="flex-shrink-0 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700"
+          >
+            📄 주문서 생성 ({selected.size}건)
+          </button>
+        )}
       </div>
 
       {/* 필터 */}
@@ -139,6 +172,14 @@ export default function HQOrdersPage() {
             <table className="w-full hidden lg:table">
               <thead>
                 <tr className="border-b border-gray-100">
+                  <th className="px-4 py-3 w-8">
+                    <input
+                      type="checkbox"
+                      checked={selected.size === orders.length && orders.length > 0}
+                      onChange={toggleSelectAll}
+                      className="rounded"
+                    />
+                  </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">주문번호</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">소매점</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">총판</th>
@@ -157,7 +198,15 @@ export default function HQOrdersPage() {
                     : (order.status === 'SUBMITTED' ? null : getNextAction(order.status))
                   const { count, total } = getItemsSummary(order.order_items)
                   return (
-                    <tr key={order.id} className="border-b border-gray-50 hover:bg-gray-50">
+                    <tr key={order.id} className={cn('border-b border-gray-50 hover:bg-gray-50', selected.has(order.id) && 'bg-emerald-50')}>
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(order.id)}
+                          onChange={() => toggleSelect(order.id)}
+                          className="rounded"
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <Link href={`/hq/orders/${order.id}`} className="text-sm font-mono text-blue-600 hover:underline">
                           {order.order_number}
@@ -213,11 +262,19 @@ export default function HQOrdersPage() {
                   : (order.status === 'SUBMITTED' ? null : getNextAction(order.status))
                 const { count, total } = getItemsSummary(order.order_items)
                 return (
-                  <div key={order.id} className="p-4 space-y-3">
+                  <div key={order.id} className={cn('p-4 space-y-3', selected.has(order.id) && 'bg-emerald-50')}>
                     <div className="flex items-center justify-between">
-                      <Link href={`/hq/orders/${order.id}`} className="text-sm font-mono text-blue-600 hover:underline">
-                        {order.order_number}
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={selected.has(order.id)}
+                          onChange={() => toggleSelect(order.id)}
+                          className="rounded"
+                        />
+                        <Link href={`/hq/orders/${order.id}`} className="text-sm font-mono text-blue-600 hover:underline">
+                          {order.order_number}
+                        </Link>
+                      </div>
                       <span className={cn(
                         'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                         ORDER_STATUS_COLORS[order.status]
