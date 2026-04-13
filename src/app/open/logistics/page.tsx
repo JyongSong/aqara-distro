@@ -60,6 +60,17 @@ interface OrderCardProps {
   submitted: boolean
 }
 
+function getDuplicates(boxIds: BoxIdState): Set<string> {
+  const all = [...boxIds.K100, ...boxIds.L100].map(v => v.trim()).filter(Boolean)
+  const seen = new Set<string>()
+  const dupes = new Set<string>()
+  for (const v of all) {
+    if (seen.has(v)) dupes.add(v)
+    else seen.add(v)
+  }
+  return dupes
+}
+
 function OrderCard({
   order,
   expanded,
@@ -71,8 +82,11 @@ function OrderCard({
   submitting,
   submitted,
 }: OrderCardProps) {
+  const dupes = getDuplicates(boxIds)
+
   const allFilled =
     (boxIds.K100.length + boxIds.L100.length > 0) &&
+    dupes.size === 0 &&
     boxIds.K100.every((v) => v.trim() !== '' && validateBoxId('K100', v) === null) &&
     boxIds.L100.every((v) => v.trim() !== '' && validateBoxId('L100', v) === null)
 
@@ -124,7 +138,10 @@ function OrderCard({
               <div className="space-y-2">
                 {Array.from({ length: order.k100_boxes }).map((_, i) => {
                   const val = boxIds.K100[i] ?? ''
-                  const err = val.trim() ? validateBoxId('K100', val) : null
+                  const fmtErr = val.trim() ? validateBoxId('K100', val) : null
+                  const isDupe = val.trim() ? dupes.has(val.trim()) : false
+                  const err = fmtErr ?? (isDupe ? '중복된 박스 ID입니다' : null)
+                  const hasErr = !!err
                   return (
                     <div key={`k100-${i}`}>
                       <div className="flex gap-2">
@@ -133,8 +150,8 @@ function OrderCard({
                           value={val}
                           onChange={(e) => onBoxIdChange('K100', i, e.target.value)}
                           placeholder="AK__________TAK (13자리)"
-                          className={`flex-1 px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent font-mono ${
-                            err ? 'border-red-400 focus:ring-red-400 bg-red-50' : 'border-gray-300 focus:ring-blue-500'
+                          className={`flex-1 px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent font-mono text-gray-900 ${
+                            hasErr ? 'border-red-400 focus:ring-red-400 bg-red-50' : 'border-gray-300 focus:ring-blue-500'
                           }`}
                         />
                         <button
@@ -165,7 +182,10 @@ function OrderCard({
               <div className="space-y-2">
                 {Array.from({ length: order.l100_boxes }).map((_, i) => {
                   const val = boxIds.L100[i] ?? ''
-                  const err = val.trim() ? validateBoxId('L100', val) : null
+                  const fmtErr = val.trim() ? validateBoxId('L100', val) : null
+                  const isDupe = val.trim() ? dupes.has(val.trim()) : false
+                  const err = fmtErr ?? (isDupe ? '중복된 박스 ID입니다' : null)
+                  const hasErr = !!err
                   return (
                     <div key={`l100-${i}`}>
                       <div className="flex gap-2">
@@ -174,8 +194,8 @@ function OrderCard({
                           value={val}
                           onChange={(e) => onBoxIdChange('L100', i, e.target.value)}
                           placeholder="LUMI__________________LS (22자리)"
-                          className={`flex-1 px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent font-mono ${
-                            err ? 'border-red-400 focus:ring-red-400 bg-red-50' : 'border-gray-300 focus:ring-blue-500'
+                          className={`flex-1 px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent font-mono text-gray-900 ${
+                            hasErr ? 'border-red-400 focus:ring-red-400 bg-red-50' : 'border-gray-300 focus:ring-blue-500'
                           }`}
                         />
                         <button
