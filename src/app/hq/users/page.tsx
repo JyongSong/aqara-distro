@@ -41,18 +41,21 @@ export default function HQUsersPage() {
 
   const fetchUsers = async () => {
     setLoading(true)
-    let query = supabase
-      .from('users_profile')
-      .select('*')
-      .order('created_at', { ascending: false })
+    try {
+      let query = supabase
+        .from('users_profile')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    if (roleFilter !== 'all') {
-      query = query.eq('role', roleFilter)
+      if (roleFilter !== 'all') {
+        query = query.eq('role', roleFilter)
+      }
+
+      const { data } = await query
+      if (data) setUsers(data)
+    } finally {
+      setLoading(false)
     }
-
-    const { data } = await query
-    if (data) setUsers(data)
-    setLoading(false)
   }
 
   const fetchDistributors = async () => {

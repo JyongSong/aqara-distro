@@ -37,35 +37,36 @@ export default function HQPricingPage() {
 
   const fetchData = async () => {
     setLoading(true)
+    try {
+      const [quotesRes, distRes, prodRes] = await Promise.all([
+        supabase
+          .from('distributor_price_quotes')
+          .select('*, product:products(*)')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('users_profile')
+          .select('*')
+          .eq('role', 'distributor')
+          .order('company_name'),
+        supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .order('name'),
+      ])
 
-    const [quotesRes, distRes, prodRes] = await Promise.all([
-      supabase
-        .from('distributor_price_quotes')
-        .select('*, product:products(*)')
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('users_profile')
-        .select('*')
-        .eq('role', 'distributor')
-        .order('company_name'),
-      supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('name'),
-    ])
+      const fetchedQuotes = (quotesRes.data ?? []) as (DistributorPriceQuote & { product: Product })[]
+      setAllQuotes(fetchedQuotes)
+      if (distRes.data) setDistributors(distRes.data)
+      if (prodRes.data) setProducts(prodRes.data)
 
-    const fetchedQuotes = (quotesRes.data ?? []) as (DistributorPriceQuote & { product: Product })[]
-    setAllQuotes(fetchedQuotes)
-    if (distRes.data) setDistributors(distRes.data)
-    if (prodRes.data) setProducts(prodRes.data)
-
-    // 선택된 총판이 있으면 해당 총판의 단가만 업데이트
-    if (selectedDistributor) {
-      setQuotes(fetchedQuotes.filter(q => q.distributor_id === selectedDistributor.id))
+      // 선택된 총판이 있으면 해당 총판의 단가만 업데이트
+      if (selectedDistributor) {
+        setQuotes(fetchedQuotes.filter(q => q.distributor_id === selectedDistributor.id))
+      }
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
   }
 
   const handleProductChange = (productId: string) => {

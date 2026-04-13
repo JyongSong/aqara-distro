@@ -38,14 +38,25 @@ export default function HQProductsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Re-fetch when tab becomes visible (handles long inactivity / session refresh)
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchProducts() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const fetchProducts = async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (data) setProducts(data)
-    setLoading(false)
+    try {
+      const { data } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (data) setProducts(data)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const revokeBlobUrl = () => {

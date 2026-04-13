@@ -33,29 +33,36 @@ export default function DistributorOrdersPage() {
 
     const fetchOrders = async () => {
       setLoading(true)
-      let query = supabase
-        .from('orders')
-        .select('*, retailer:users_profile!retailer_id(company_name)')
-        .eq('distributor_id', profile.id)
-        .order('created_at', { ascending: false })
+      try {
+        let query = supabase
+          .from('orders')
+          .select('*, retailer:users_profile!retailer_id(company_name)')
+          .eq('distributor_id', profile.id)
+          .order('created_at', { ascending: false })
 
-      // 탭 구분: 총판 직발주 = retailer_id === distributor_id
-      if (tab === 'retailer') {
-        query = query.neq('retailer_id', profile.id)
-      } else {
-        query = query.eq('retailer_id', profile.id)
+        // 탭 구분: 총판 직발주 = retailer_id === distributor_id
+        if (tab === 'retailer') {
+          query = query.neq('retailer_id', profile.id)
+        } else {
+          query = query.eq('retailer_id', profile.id)
+        }
+
+        if (statusFilter !== 'all') {
+          query = query.eq('status', statusFilter)
+        }
+
+        const { data } = await query
+        if (data) setOrders(data)
+      } finally {
+        setLoading(false)
       }
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter)
-      }
-
-      const { data } = await query
-      if (data) setOrders(data)
-      setLoading(false)
     }
 
     fetchOrders()
+
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchOrders() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
   }, [profile, tab, statusFilter, supabase])
 
   const statusOptions = tab === 'retailer'

@@ -27,40 +27,50 @@ export default function HQOrdersPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter])
 
+  // Re-fetch when tab becomes visible (handles long inactivity / session refresh)
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchOrders() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const fetchOrders = async () => {
     setLoading(true)
-    let query = supabase
-      .from('orders')
-      .select(`
-        *,
-        retailer:users_profile!retailer_id(company_name),
-        distributor:users_profile!distributor_id(company_name),
-        order_items(quantity)
-      `)
-      .order('created_at', { ascending: false })
+    try {
+      let query = supabase
+        .from('orders')
+        .select(`
+          *,
+          retailer:users_profile!retailer_id(company_name),
+          distributor:users_profile!distributor_id(company_name),
+          order_items(quantity)
+        `)
+        .order('created_at', { ascending: false })
 
-    if (statusFilter !== 'all') {
-      query = query.eq('status', statusFilter)
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter)
+      }
+
+      const { data } = await query
+
+      // 총판 출고 주문은 항상 HQ에서 제외
+      const isHqOrder = (o: OrderWithMeta) => o.fulfillment_type !== 'distributor'
+
+      const allOrders = (data ?? []) as OrderWithMeta[]
+      if (statusFilter === 'all') {
+        setOrders(allOrders.filter((o: OrderWithMeta) =>
+          isHqOrder(o) && (
+            HQ_VISIBLE_STATUSES.includes(o.status) ||
+            (o.status === 'SUBMITTED' && o.retailer_id === o.distributor_id)
+          )
+        ))
+      } else {
+        setOrders(allOrders.filter(isHqOrder))
+      }
+    } finally {
+      setLoading(false)
     }
-
-    const { data } = await query
-
-    // 총판 출고 주문은 항상 HQ에서 제외
-    const isHqOrder = (o: OrderWithMeta) => o.fulfillment_type !== 'distributor'
-
-    const allOrders = (data ?? []) as OrderWithMeta[]
-    if (statusFilter === 'all') {
-      setOrders(allOrders.filter((o: OrderWithMeta) =>
-        isHqOrder(o) && (
-          HQ_VISIBLE_STATUSES.includes(o.status) ||
-          (o.status === 'SUBMITTED' && o.retailer_id === o.distributor_id)
-        )
-      ))
-    } else {
-      setOrders(allOrders.filter(isHqOrder))
-    }
-
-    setLoading(false)
   }
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {

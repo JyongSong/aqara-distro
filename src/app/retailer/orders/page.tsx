@@ -38,24 +38,35 @@ export default function RetailerOrdersPage() {
   const fetchOrders = useCallback(async () => {
     if (!profile) return
     setLoading(true)
-    let query = supabase
-      .from('orders')
-      .select('*, order_items(quantity)')
-      .eq('retailer_id', profile.id)
-      .order('created_at', { ascending: false })
+    try {
+      let query = supabase
+        .from('orders')
+        .select('*, order_items(quantity)')
+        .eq('retailer_id', profile.id)
+        .order('created_at', { ascending: false })
 
-    if (statusFilter !== 'all') {
-      query = query.eq('status', statusFilter)
+      if (statusFilter !== 'all') {
+        query = query.eq('status', statusFilter)
+      }
+
+      const { data } = await query
+      if (data) setOrders(data as OrderWithItems[])
+    } finally {
+      setLoading(false)
     }
-
-    const { data } = await query
-    if (data) setOrders(data as OrderWithItems[])
-    setLoading(false)
   }, [profile, statusFilter, supabase])
 
   useEffect(() => {
     fetchOrders()
   }, [fetchOrders])
+
+  // Re-fetch when tab becomes visible (handles long inactivity / session refresh)
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === 'visible') fetchOrders() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSubmitQuote = async (orderId: string) => {
     await supabase.from('orders').update({
