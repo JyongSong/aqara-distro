@@ -10,6 +10,7 @@ interface NavItem {
   label: string
   href: string
   icon: string
+  external?: boolean
 }
 
 const NAV_ITEMS: Record<string, NavItem[]> = {
@@ -36,6 +37,7 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
     { label: '상품 관리', href: '/hq/products', icon: '📦' },
     { label: '단가 관리', href: '/hq/pricing', icon: '💰' },
     { label: '사용자 관리', href: '/hq/users', icon: '👥' },
+    { label: '물류 관리', href: '/open/logistics', icon: '🚚', external: true },
     { label: '계정 설정', href: '/hq/settings', icon: '⚙️' },
   ],
 }
@@ -92,22 +94,39 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-        {items.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onClose}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
-              isActiveLink(pathname, item.href, items)
-                ? 'bg-blue-50 text-blue-700 font-medium'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-            )}
-          >
-            <span>{item.icon}</span>
-            {item.label}
-          </Link>
-        ))}
+        {items.map((item) =>
+          item.external ? (
+            <a
+              key={item.href}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <span>{item.icon}</span>
+              {item.label}
+              <svg className="w-3 h-3 ml-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          ) : (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={onClose}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors',
+                isActiveLink(pathname, item.href, items)
+                  ? 'bg-blue-50 text-blue-700 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              )}
+            >
+              <span>{item.icon}</span>
+              {item.label}
+            </Link>
+          )
+        )}
       </nav>
 
       {/* Logout */}
