@@ -314,7 +314,7 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* 액션 버튼 */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         {action && (
           <button
             onClick={() => handleStatusChange(action.nextStatus)}
@@ -326,6 +326,17 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
           >
             {processing ? '처리 중...' : action.label}
           </button>
+        )}
+
+        {/* 주문서 생성 */}
+        {!isDistFulfill && items.length > 0 && (
+          <a
+            href={`/api/hq/orders/export?id=${order.id}`}
+            download
+            className="px-6 py-3 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700"
+          >
+            📄 주문서 생성
+          </a>
         )}
 
         {/* 거래명세서 인쇄 */}

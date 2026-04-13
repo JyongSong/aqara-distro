@@ -23,6 +23,7 @@ export default function HQProductsPage() {
     order_unit: 1,
     consumer_price: '',
     product_url: '',
+    erp_code: '',
   })
   const [newOption, setNewOption] = useState({ code: '', name: '' })
   const [saving, setSaving] = useState(false)
@@ -55,7 +56,7 @@ export default function HQProductsPage() {
   }
 
   const resetForm = () => {
-    setForm({ product_code: '', name: '', category: '', options: [], is_active: true, moq: 1, order_unit: 1, consumer_price: '', product_url: '' })
+    setForm({ product_code: '', name: '', category: '', options: [], is_active: true, moq: 1, order_unit: 1, consumer_price: '', product_url: '', erp_code: '' })
     setNewOption({ code: '', name: '' })
     setEditingProduct(null)
     setShowForm(false)
@@ -76,6 +77,7 @@ export default function HQProductsPage() {
       order_unit: product.order_unit ?? 1,
       consumer_price: product.consumer_price != null ? String(product.consumer_price) : '',
       product_url: product.product_url || '',
+      erp_code: product.erp_code || '',
     })
     setImageFile(null)
     revokeBlobUrl()
@@ -142,6 +144,7 @@ export default function HQProductsPage() {
       image_url,
       consumer_price: form.consumer_price ? parseInt(form.consumer_price) : null,
       product_url: form.product_url || null,
+      erp_code: form.erp_code || null,
     }
 
     if (editingProduct) {
@@ -265,8 +268,8 @@ export default function HQProductsPage() {
               </div>
             </div>
 
-            {/* 소비자가 + 상품 링크 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* 소비자가 + ERP 코드 + 상품 링크 */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   소비자가 (원) <span className="text-gray-400 font-normal text-xs">VAT 포함</span>
@@ -278,6 +281,18 @@ export default function HQProductsPage() {
                   min="0"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
                   placeholder="예: 150000"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ERP 코드
+                </label>
+                <input
+                  type="text"
+                  value={form.erp_code}
+                  onChange={(e) => setForm({ ...form, erp_code: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                  placeholder="예: AQ-DL100"
                 />
               </div>
               <div>
@@ -416,6 +431,7 @@ export default function HQProductsPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">옵션</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">MOQ/단위</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">소비자가</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">ERP 코드</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">상태</th>
                   <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">관리</th>
                 </tr>
@@ -462,6 +478,9 @@ export default function HQProductsPage() {
                     </td>
                     <td className="px-4 py-3 text-right text-sm text-gray-700">
                       {product.consumer_price != null ? formatKRW(product.consumer_price) : <span className="text-gray-300">-</span>}
+                    </td>
+                    <td className="px-4 py-3 text-left text-sm font-mono text-gray-500">
+                      {product.erp_code || <span className="text-gray-300">-</span>}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -527,6 +546,9 @@ export default function HQProductsPage() {
                       MOQ: {product.moq ?? 1} / 단위: {product.order_unit ?? 1}
                       {product.consumer_price != null && (
                         <span className="ml-2 text-gray-500">소비자가: {formatKRW(product.consumer_price)}</span>
+                      )}
+                      {product.erp_code && (
+                        <span className="ml-2 font-mono text-gray-500">ERP: {product.erp_code}</span>
                       )}
                     </p>
                     {(product.options || []).length > 0 && (

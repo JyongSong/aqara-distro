@@ -39,6 +39,7 @@ export interface Product {
   order_unit: number
   consumer_price: number | null
   product_url: string | null
+  erp_code: string | null
   is_active: boolean
   created_at: string
 }
