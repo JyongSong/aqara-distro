@@ -10,21 +10,57 @@ interface Props {
 
 export default function BarcodeScannerModal({ onScan, onClose, label }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
+  const trackRef = useRef<MediaStreamTrack | null>(null)
   const [error, setError] = useState<string | null>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
+
+  // 탭 대상 좌표를 기반으로 포인트 오브 인터레스트 + single-shot 포커스
+  const handleTapFocus = async (e: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    const track = trackRef.current
+    if (!track) return
+    const el = videoRef.current
+    if (!el) return
+
+    const rect = el.getBoundingClientRect()
+    let clientX: number, clientY: number
+    if ('touches' in e) {
+      clientX = e.touches[0]?.clientX ?? rect.left + rect.width / 2
+      clientY = e.touches[0]?.clientY ?? rect.top + rect.height / 2
+    } else {
+      clientX = e.clientX
+      clientY = e.clientY
+    }
+    const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+    const y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height))
+
+    try {
+      // single-shot 포커스 → 잠시 후 continuous 복귀
+      await track.applyConstraints({
+        advanced: [{ pointsOfInterest: [{ x, y }], focusMode: 'single-shot' } as MediaTrackConstraints],
+      })
+      setTimeout(() => {
+        track.applyConstraints({
+          advanced: [{ focusMode: 'continuous' } as MediaTrackConstraints],
+        }).catch(() => {})
+      }, 800)
+    } catch {
+      // 지원 안 하는 기기에서는 무시
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
 
     async function start() {
       try {
-        // 1. 직접 getUserMedia — 해상도 높게, 연속 자동초점 요청
+        // 방안 A: getUserMedia 초기 요청에 focusMode 포함 (Android 삼성 등 대응)
         const stream = await navigator.mediaDevices.getUserMedia({
           video: {
             facingMode: { ideal: 'environment' },
             width:  { ideal: 1920 },
             height: { ideal: 1080 },
-          },
+            ...({ focusMode: { ideal: 'continuous' } } as object),
+          } as MediaTrackConstraints,
         })
 
         if (cancelled) {
@@ -32,20 +68,20 @@ export default function BarcodeScannerModal({ onScan, onClose, label }: Props) {
           return
         }
 
-        // 2. 자동초점(연속) 지원 여부 확인 후 적용
+        // 방안 B: applyConstraints advanced 배열로 연속 AF 재적용
         const track = stream.getVideoTracks()[0]
+        trackRef.current = track ?? null
         if (track) {
           const cap = track.getCapabilities?.() as Record<string, unknown> | undefined
           const modes = cap?.focusMode as string[] | undefined
           if (modes?.includes('continuous')) {
             await track.applyConstraints({
-              // focusMode는 표준 타입에 없어서 캐스팅
-              ...(({ focusMode: 'continuous' }) as MediaTrackConstraints),
-            }).catch(() => {/* 지원 안 해도 무시 */})
+              advanced: [{ focusMode: 'continuous' } as MediaTrackConstraints],
+            }).catch(() => {})
           }
         }
 
-        // 3. ZXing으로 디코딩 — decodeFromStream에 stream을 직접 전달
+        // ZXing으로 디코딩
         const { BrowserMultiFormatReader } = await import('@zxing/browser')
         const { DecodeHintType, BarcodeFormat } = await import('@zxing/library')
 
@@ -85,6 +121,7 @@ export default function BarcodeScannerModal({ onScan, onClose, label }: Props) {
         cleanupRef.current = () => {
           controls.stop()
           stream.getTracks().forEach(t => t.stop())
+          trackRef.current = null
         }
 
         if (cancelled) cleanupRef.current()
@@ -142,21 +179,32 @@ export default function BarcodeScannerModal({ onScan, onClose, label }: Props) {
               <p className="text-sm text-red-700 whitespace-pre-line">{error}</p>
             </div>
           ) : (
-            <div className="relative rounded-xl overflow-hidden bg-black" style={{ height: '280px' }}>
-              <video
-                ref={videoRef}
-                className="w-full h-full object-cover"
-                autoPlay
-                muted
-                playsInline
-              />
-              {/* 스캔 가이드 */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="border-2 border-red-400 rounded" style={{ width: '80%', height: '80px' }} />
+            <>
+              {/* 방안 C: 화면 탭으로 수동 포커스 (Android 대응) */}
+              <div
+                className="relative rounded-xl overflow-hidden bg-black cursor-pointer"
+                style={{ height: '280px' }}
+                onClick={handleTapFocus}
+                onTouchStart={handleTapFocus}
+              >
+                <video
+                  ref={videoRef}
+                  className="w-full h-full object-cover"
+                  autoPlay
+                  muted
+                  playsInline
+                />
+                {/* 스캔 가이드 */}
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="border-2 border-red-400 rounded" style={{ width: '80%', height: '80px' }} />
+                </div>
               </div>
-            </div>
+              <p className="text-xs text-gray-400 text-center mt-2">
+                화면을 탭하면 초점을 맞출 수 있습니다
+              </p>
+            </>
           )}
-          <p className="text-xs text-gray-500 text-center mt-3">
+          <p className="text-xs text-gray-500 text-center mt-1">
             바코드를 빨간 테두리 안에 맞춰주세요
           </p>
         </div>
