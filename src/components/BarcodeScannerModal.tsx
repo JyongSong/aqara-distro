@@ -11,17 +11,43 @@ interface Props {
 export default function BarcodeScannerModal({ onScan, onClose, label }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const [error, setError] = useState<string | null>(null)
-  const controlsRef = useRef<{ stop: () => void } | null>(null)
+  const cleanupRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     let cancelled = false
 
     async function start() {
       try {
+        // 1. 직접 getUserMedia — 해상도 높게, 연속 자동초점 요청
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: 'environment' },
+            width:  { ideal: 1920 },
+            height: { ideal: 1080 },
+          },
+        })
+
+        if (cancelled) {
+          stream.getTracks().forEach(t => t.stop())
+          return
+        }
+
+        // 2. 자동초점(연속) 지원 여부 확인 후 적용
+        const track = stream.getVideoTracks()[0]
+        if (track) {
+          const cap = track.getCapabilities?.() as Record<string, unknown> | undefined
+          const modes = cap?.focusMode as string[] | undefined
+          if (modes?.includes('continuous')) {
+            await track.applyConstraints({
+              // focusMode는 표준 타입에 없어서 캐스팅
+              ...(({ focusMode: 'continuous' }) as MediaTrackConstraints),
+            }).catch(() => {/* 지원 안 해도 무시 */})
+          }
+        }
+
+        // 3. ZXing으로 디코딩 — decodeFromStream에 stream을 직접 전달
         const { BrowserMultiFormatReader } = await import('@zxing/browser')
         const { DecodeHintType, BarcodeFormat } = await import('@zxing/library')
-
-        if (cancelled || !videoRef.current) return
 
         const hints = new Map()
         hints.set(DecodeHintType.POSSIBLE_FORMATS, [
@@ -38,28 +64,39 @@ export default function BarcodeScannerModal({ onScan, onClose, label }: Props) {
 
         const reader = new BrowserMultiFormatReader(hints)
 
-        const controls = await reader.decodeFromVideoDevice(
-          undefined,
+        if (cancelled || !videoRef.current) {
+          stream.getTracks().forEach(t => t.stop())
+          return
+        }
+
+        const controls = await reader.decodeFromStream(
+          stream,
           videoRef.current,
-          (result, err) => {
+          (result) => {
             if (result) {
               controls.stop()
+              stream.getTracks().forEach(t => t.stop())
               onScan(result.getText())
               onClose()
-            } else if (err && err.name !== 'NotFoundException') {
-              console.warn('scan error', err)
             }
           }
         )
 
-        controlsRef.current = controls
+        cleanupRef.current = () => {
+          controls.stop()
+          stream.getTracks().forEach(t => t.stop())
+        }
+
+        if (cancelled) cleanupRef.current()
+
       } catch (e) {
+        if (cancelled) return
         const msg = e instanceof Error ? e.message : String(e)
-        const isPermission = msg.toLowerCase().includes('permission') ||
+        const isPerm = msg.toLowerCase().includes('permission') ||
           msg.toLowerCase().includes('notallowed') ||
           msg.toLowerCase().includes('denied')
         setError(
-          isPermission
+          isPerm
             ? '카메라 권한이 필요합니다.\n브라우저 설정에서 카메라를 허용해 주세요.'
             : `카메라를 열 수 없습니다: ${msg}`
         )
@@ -70,15 +107,15 @@ export default function BarcodeScannerModal({ onScan, onClose, label }: Props) {
 
     return () => {
       cancelled = true
-      controlsRef.current?.stop()
-      controlsRef.current = null
+      cleanupRef.current?.()
+      cleanupRef.current = null
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleClose = () => {
-    controlsRef.current?.stop()
-    controlsRef.current = null
+    cleanupRef.current?.()
+    cleanupRef.current = null
     onClose()
   }
 
@@ -113,9 +150,9 @@ export default function BarcodeScannerModal({ onScan, onClose, label }: Props) {
                 muted
                 playsInline
               />
-              {/* scanning guide line */}
+              {/* 스캔 가이드 */}
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="w-4/5 border-2 border-red-400 rounded" style={{ height: '80px' }} />
+                <div className="border-2 border-red-400 rounded" style={{ width: '80%', height: '80px' }} />
               </div>
             </div>
           )}
