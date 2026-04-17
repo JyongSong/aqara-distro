@@ -89,42 +89,52 @@ export async function PATCH(
     }
 
     case 'APPROVED':
-      // HQ에만 알림 (소매점 제거)
+      await Promise.all([
+        sendSms(
+          hqPhone,
+          `[Aqara] 새 발주 승인\n주문번호: ${orderNumber}\n총판: ${distributorName}\n주문관리에서 확인해 주세요.`
+        ),
+        sendSms(
+          retailerPhone,
+          `[Aqara] 발주가 승인되었습니다.\n주문번호: ${orderNumber}`
+        ),
+      ])
+      break
+
+    case 'HQ_RECEIVED':
       await sendSms(
-        hqPhone,
-        `[Aqara] 새 발주 승인\n주문번호: ${orderNumber}\n총판: ${distributorName}\n주문관리에서 확인해 주세요.`
+        retailerPhone,
+        `[Aqara] 발주가 본사에 접수되었습니다.\n주문번호: ${orderNumber}`
       )
       break
 
-    case 'HQ_RECEIVED': {
-      const isSelfOrder = order.retailer_id === order.distributor_id
-      const targets = [
-        sendSms(retailerPhone, `[Aqara] 발주가 본사에 접수되었습니다.\n주문번호: ${orderNumber}`),
-        ...(isSelfOrder ? [sendSms(distributorPhone, `[Aqara] 발주가 본사에 접수되었습니다.\n주문번호: ${orderNumber}`)] : []),
-      ]
-      await Promise.all(targets)
+    case 'PREPARING':
+      await sendSms(
+        retailerPhone,
+        `[Aqara] 출고 준비 중입니다.\n주문번호: ${orderNumber}`
+      )
       break
-    }
 
-    case 'SHIPPED': {
-      const isSelfOrder = order.retailer_id === order.distributor_id
-      const targets = [
-        sendSms(retailerPhone, `[Aqara] 출고되었습니다.\n주문번호: ${orderNumber}\n빠른 시일 내에 배송될 예정입니다.`),
-        ...(isSelfOrder ? [sendSms(distributorPhone, `[Aqara] 출고되었습니다.\n주문번호: ${orderNumber}\n빠른 시일 내에 배송될 예정입니다.`)] : []),
-      ]
-      await Promise.all(targets)
+    case 'SHIPPED':
+      await sendSms(
+        retailerPhone,
+        `[Aqara] 출고되었습니다.\n주문번호: ${orderNumber}\n빠른 시일 내에 배송될 예정입니다.`
+      )
       break
-    }
 
-    case 'DELIVERED': {
-      const isSelfOrder = order.retailer_id === order.distributor_id
-      await Promise.all([
-        sendSms(retailerPhone, `[Aqara] 상품이 수령 확인되었습니다.\n주문번호: ${orderNumber}`),
-        sendSms(hqPhone, `[Aqara] 배송 완료\n주문번호: ${orderNumber}\n${isSelfOrder ? `총판: ${distributorName}` : `소매점: ${retailerName}`}`),
-        ...(isSelfOrder ? [sendSms(distributorPhone, `[Aqara] 상품이 수령 확인되었습니다.\n주문번호: ${orderNumber}`)] : []),
-      ])
+    case 'DELIVERED':
+      await sendSms(
+        retailerPhone,
+        `[Aqara] 상품이 수령 확인되었습니다.\n주문번호: ${orderNumber}`
+      )
       break
-    }
+
+    case 'COMPLETED':
+      await sendSms(
+        retailerPhone,
+        `[Aqara] 거래가 완료되었습니다.\n주문번호: ${orderNumber}`
+      )
+      break
   }
 
   return NextResponse.json(updatedOrder)
