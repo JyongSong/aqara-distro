@@ -76,12 +76,12 @@ export default function HQOrdersPage() {
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     setProcessing(orderId)
 
-    await fetch(`/api/orders/${orderId}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newStatus }),
-    })
+    const updateData: Record<string, unknown> = { status: newStatus }
+    if (newStatus === 'SHIPPED') {
+      updateData.shipped_at = new Date().toISOString()
+    }
 
+    await supabase.from('orders').update(updateData).eq('id', orderId)
     setProcessing(null)
     fetchOrders()
   }

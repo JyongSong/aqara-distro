@@ -206,14 +206,13 @@ export default function DistributorNewOrderPage() {
       return
     }
 
-    // 3단계: SUBMITTED로 변경 via API (triggers SMS notification to HQ)
-    const statusRes = await fetch(`/api/orders/${order.id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newStatus: 'SUBMITTED' }),
-    })
+    // 3단계: SUBMITTED로 변경
+    const { error: submitError } = await supabase
+      .from('orders')
+      .update({ status: 'SUBMITTED', submitted_at: new Date().toISOString() })
+      .eq('id', order.id)
 
-    if (!statusRes.ok) {
+    if (submitError) {
       alert('발주 제출에 실패했습니다. 다시 시도해주세요.')
       setSaving(false)
       return

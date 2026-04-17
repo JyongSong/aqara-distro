@@ -49,12 +49,11 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
     if (!order) return
     setProcessing(true)
 
-    const res = await fetch(`/api/orders/${order.id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newStatus }),
-    })
-    if (!res.ok) {
+    const updateData: Record<string, unknown> = { status: newStatus }
+    if (newStatus === 'SHIPPED') updateData.shipped_at = new Date().toISOString()
+
+    const { error } = await supabase.from('orders').update(updateData).eq('id', order.id)
+    if (error) {
       alert('상태 변경에 실패했습니다. 다시 시도해 주세요.')
       setProcessing(false)
       return

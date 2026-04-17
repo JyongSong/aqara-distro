@@ -83,13 +83,15 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
 
   const handleConfirmDelivery = async () => {
     if (!order) return
-    const res = await fetch(`/api/orders/${order.id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newStatus: 'DELIVERED' }),
-    })
+    const { error } = await supabase
+      .from('orders')
+      .update({
+        status: 'DELIVERED',
+        delivered_at: new Date().toISOString(),
+      })
+      .eq('id', order.id)
 
-    if (!res.ok) {
+    if (error) {
       alert('수령 확인에 실패했습니다. 다시 시도해 주세요.')
       return
     }

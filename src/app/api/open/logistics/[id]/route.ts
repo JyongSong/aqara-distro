@@ -1,6 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { sendSms } from '@/lib/sms'
 
 interface PatchBody {
   box_ids: {
@@ -79,21 +78,6 @@ export async function PATCH(
     return NextResponse.json(
       { error: 'Order not found or already shipped' },
       { status: 404 }
-    )
-  }
-
-  // Send SMS to retailer about shipment
-  const { data: orderDetail } = await supabase
-    .from('orders')
-    .select('order_number, retailer:users_profile!retailer_id(phone)')
-    .eq('id', id)
-    .single()
-
-  if (orderDetail) {
-    const retailerPhone = (orderDetail.retailer as { phone?: string } | null)?.phone
-    await sendSms(
-      retailerPhone,
-      `[Aqara] 출고되었습니다.\n주문번호: ${orderDetail.order_number}\n빠른 시일 내에 배송될 예정입니다.`
     )
   }
 

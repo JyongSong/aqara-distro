@@ -139,14 +139,6 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       setProcessing(false)
       return
     }
-
-    // Send SMS notifications via status API
-    await fetch(`/api/orders/${order.id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newStatus: 'APPROVED' }),
-    }).catch(() => {/* SMS failure should not block UI */})
-
     setOrder({
       ...order,
       status: 'APPROVED',
@@ -179,12 +171,10 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
   const handleDistProgress = async (nextStatus: string) => {
     if (!order) return
     setProcessing(true)
-    const res = await fetch(`/api/orders/${order.id}/status`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newStatus: nextStatus }),
-    })
-    if (!res.ok) { alert('상태 변경에 실패했습니다.'); setProcessing(false); return }
+    const updateData: Record<string, unknown> = { status: nextStatus }
+    if (nextStatus === 'SHIPPED') updateData.shipped_at = new Date().toISOString()
+    const { error } = await supabase.from('orders').update(updateData).eq('id', order.id)
+    if (error) { alert('상태 변경에 실패했습니다.'); setProcessing(false); return }
     setOrder({ ...order, status: nextStatus as Order['status'], ...(nextStatus === 'SHIPPED' ? { shipped_at: new Date().toISOString() } : {}) })
     setProcessing(false)
   }
