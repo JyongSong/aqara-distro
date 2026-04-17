@@ -28,6 +28,14 @@ export async function GET(request: NextRequest) {
 
   const retailer = order.retailer as { company_name: string; phone: string | null; post_code: string | null; address: string | null }
 
+  // 우편번호/주소 분리 (기존 데이터는 address 앞에 5자리 우편번호가 포함되어 있을 수 있음)
+  function splitPostCode(raw: string | null): { postCode: string; address: string } {
+    if (!raw) return { postCode: '', address: '' }
+    const m = raw.match(/^(\d{5})\s+(.*)$/)
+    if (m) return { postCode: m[1], address: m[2] }
+    return { postCode: '', address: raw }
+  }
+
   // 헤더 행
   const header = ['No.', '주문번호', '상품명', '모델명', '수량', '공급단가(VAT포함)', '주문금액(Vat포함)', '수취인명', '전화(휴대폰)', '우편번호', '주소']
 
@@ -46,8 +54,16 @@ export async function GET(request: NextRequest) {
       totalVat,
       retailer.company_name,
       retailer.phone || '',
-      retailer.post_code || '',
-      order.shipping_address || retailer.address || '',
+      (() => {
+        if (retailer.post_code) return retailer.post_code
+        const raw = order.shipping_address || retailer.address || ''
+        return splitPostCode(raw).postCode
+      })(),
+      (() => {
+        const raw = order.shipping_address || retailer.address || ''
+        if (retailer.post_code) return raw  // post_code 분리 저장된 신규 데이터
+        return splitPostCode(raw).address   // 기존 데이터: 우편번호 제거
+      })(),
     ]
   })
 
