@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
   const { data: order } = await supabase
     .from('orders')
-    .select('*, retailer:users_profile!retailer_id(company_name, phone, address)')
+    .select('*, retailer:users_profile!retailer_id(company_name, phone, post_code, address)')
     .eq('id', orderId)
     .single()
 
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   if (!items) return NextResponse.json({ error: 'items not found' }, { status: 404 })
 
-  const retailer = order.retailer as { company_name: string; phone: string | null; address: string | null }
+  const retailer = order.retailer as { company_name: string; phone: string | null; post_code: string | null; address: string | null }
 
   // 헤더 행
   const header = ['No.', '주문번호', '상품명', '모델명', '수량', '공급단가(VAT포함)', '주문금액(Vat포함)', '수취인명', '전화(휴대폰)', '우편번호', '주소']
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       totalVat,
       retailer.company_name,
       retailer.phone || '',
-      '',
+      retailer.post_code || '',
       order.shipping_address || retailer.address || '',
     ]
   })

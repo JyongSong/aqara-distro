@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   const { data: orders } = await supabase
     .from('orders')
-    .select('*, retailer:users_profile!retailer_id(company_name, phone, address)')
+    .select('*, retailer:users_profile!retailer_id(company_name, phone, post_code, address)')
     .in('id', orderIds)
     .order('created_at', { ascending: false })
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   let rowNo = 1
 
   for (const order of orders) {
-    const retailer = order.retailer as { company_name: string; phone: string | null; address: string | null }
+    const retailer = order.retailer as { company_name: string; phone: string | null; post_code: string | null; address: string | null }
     const orderItems = items.filter(item => item.order_id === order.id)
 
     for (const item of orderItems) {
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
         totalVat,
         retailer.company_name,
         retailer.phone || '',
-        '',
+        retailer.post_code || '',
         order.shipping_address || retailer.address || '',
       ])
     }

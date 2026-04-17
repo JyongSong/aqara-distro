@@ -21,6 +21,7 @@ export interface UserProfile {
   company_name: string
   contact_name: string | null
   phone: string | null
+  post_code: string | null
   address: string | null
   distributor_id: string | null
   status: UserStatus

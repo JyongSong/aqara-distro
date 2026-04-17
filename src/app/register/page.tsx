@@ -97,7 +97,7 @@ export default function RegisterPage() {
 
     setLoading(true)
 
-    const fullAddress = [form.zipcode, form.address, form.address_detail]
+    const fullAddress = [form.address, form.address_detail]
       .filter(Boolean)
       .join(' ')
 
@@ -110,6 +110,7 @@ export default function RegisterPage() {
         company_name: form.company_name,
         contact_name: form.contact_name,
         phone: form.phone,
+        post_code: form.zipcode || null,
         address: fullAddress,
         distributor_code: form.distributor_code.trim() || null,
       }),

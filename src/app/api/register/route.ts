@@ -8,7 +8,7 @@ const DISTRIBUTOR_CODE_MAP: Record<string, string> = {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password, company_name, contact_name, phone, address, distributor_code } = body
+    const { email, password, company_name, contact_name, phone, post_code, address, distributor_code } = body
 
     // Validate required fields
     if (!email || !password || !company_name || !contact_name || !phone || !address) {
@@ -71,6 +71,7 @@ export async function POST(request: NextRequest) {
         company_name,
         contact_name,
         phone,
+        post_code: post_code || null,
         address,
         distributor_id,
       })
