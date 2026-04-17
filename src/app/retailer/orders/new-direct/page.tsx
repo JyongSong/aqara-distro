@@ -167,12 +167,14 @@ function DirectOrderForm() {
       return
     }
 
-    const { error: submitError } = await supabase
-      .from('orders')
-      .update({ status: 'SUBMITTED', submitted_at: new Date().toISOString() })
-      .eq('id', order.id)
+    // Update status to SUBMITTED via API (triggers SMS notification)
+    const statusRes = await fetch(`/api/orders/${order.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newStatus: 'SUBMITTED' }),
+    })
 
-    if (submitError) {
+    if (!statusRes.ok) {
       alert('발주 요청 제출에 실패했습니다. 다시 시도해주세요.')
       setSaving(false)
       return
