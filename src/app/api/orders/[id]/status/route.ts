@@ -70,23 +70,12 @@ export async function PATCH(
   const hqPhone = process.env.HQ_NOTIFY_PHONE
 
   switch (newStatus) {
-    case 'SUBMITTED': {
-      const isSelfOrder = order.retailer_id === order.distributor_id
-      if (isSelfOrder) {
-        // 총판 직발주 → HQ에 알림
-        await sendSms(
-          hqPhone,
-          `[Aqara] 총판 직발주 요청\n주문번호: ${orderNumber}\n총판: ${distributorName}\n주문관리에서 확인해 주세요.`
-        )
-      } else {
-        // 일반 발주 → 총판에 알림
-        await sendSms(
-          distributorPhone,
-          `[Aqara] 새 발주 요청\n주문번호: ${orderNumber}\n소매점: ${retailerName}\n발주관리에서 확인해 주세요.`
-        )
-      }
+    case 'SUBMITTED':
+      await sendSms(
+        distributorPhone,
+        `[Aqara] 새 발주 요청\n주문번호: ${orderNumber}\n소매점: ${retailerName}\n발주관리에서 확인해 주세요.`
+      )
       break
-    }
 
     case 'APPROVED':
       await Promise.all([
