@@ -21,10 +21,13 @@ export default function OpenDashboardPage() {
 
   useEffect(() => {
     const fetchStats = async () => {
-      const res = await fetch('/api/open/dashboard')
-      const data = await res.json()
-      setStats(data)
-      setLoading(false)
+      try {
+        const res = await fetch('/api/open/dashboard')
+        const data = await res.json()
+        setStats(data)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchStats()
   }, [])

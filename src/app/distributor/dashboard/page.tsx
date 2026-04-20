@@ -33,64 +33,46 @@ export default function DistributorDashboard() {
     if (!profile) return
 
     const fetchData = async () => {
-      const startOfMonth = new Date()
-      startOfMonth.setDate(1)
-      startOfMonth.setHours(0, 0, 0, 0)
+      try {
+        const startOfMonth = new Date()
+        startOfMonth.setDate(1)
+        startOfMonth.setHours(0, 0, 0, 0)
 
-      // 최근 견적/발주 현황 (소매 주문 전체, 최신 10건)
-      const { data: placedOrders } = await supabase
-        .from('orders')
-        .select('*, retailer:users_profile!retailer_id(company_name), order_items(quantity)')
-        .eq('distributor_id', profile.id)
-        .neq('retailer_id', profile.id)
-        .order('created_at', { ascending: false })
-        .limit(10)
+        const RETAIL_STATUSES = ['APPROVED', 'HQ_RECEIVED', 'PREPARING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
 
-      if (placedOrders) setPendingOrders(placedOrders as OrderWithRetailer[])
+        const [
+          { data: placedOrders },
+          { count: orderPlacedCount },
+          { data: retailOrders },
+          { data: selfOrders },
+        ] = await Promise.all([
+          supabase.from('orders').select('*, retailer:users_profile!retailer_id(company_name), order_items(quantity)').eq('distributor_id', profile.id).neq('retailer_id', profile.id).order('created_at', { ascending: false }).limit(10),
+          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('distributor_id', profile.id).eq('status', 'ORDER_PLACED').neq('retailer_id', profile.id),
+          supabase.from('orders').select('order_items(quantity)').eq('distributor_id', profile.id).in('status', RETAIL_STATUSES).neq('retailer_id', profile.id).gte('created_at', startOfMonth.toISOString()),
+          supabase.from('orders').select('order_items(quantity)').eq('distributor_id', profile.id).eq('retailer_id', profile.id).gte('created_at', startOfMonth.toISOString()),
+        ])
 
-      // 발주확정 대기 카운트
-      const { count: orderPlacedCount } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('distributor_id', profile.id)
-        .eq('status', 'ORDER_PLACED')
-        .neq('retailer_id', profile.id)
+        if (placedOrders) setPendingOrders(placedOrders as OrderWithRetailer[])
 
-      // 소매 판매수량 (이번달, APPROVED+, retailer != self)
-      const RETAIL_STATUSES = ['APPROVED', 'HQ_RECEIVED', 'PREPARING', 'SHIPPED', 'DELIVERED', 'COMPLETED']
-      const { data: retailOrders } = await supabase
-        .from('orders')
-        .select('order_items(quantity)')
-        .eq('distributor_id', profile.id)
-        .in('status', RETAIL_STATUSES)
-        .neq('retailer_id', profile.id)
-        .gte('created_at', startOfMonth.toISOString())
+        const retailSaleQty = (retailOrders ?? []).reduce(
+          (sum: number, o: { order_items: { quantity: number }[] | null }) =>
+            sum + ((o.order_items ?? []).reduce((s: number, i: { quantity: number }) => s + i.quantity, 0)),
+          0
+        )
+        const selfOrderQty = (selfOrders ?? []).reduce(
+          (sum: number, o: { order_items: { quantity: number }[] | null }) =>
+            sum + ((o.order_items ?? []).reduce((s: number, i: { quantity: number }) => s + i.quantity, 0)),
+          0
+        )
 
-      const retailSaleQty = (retailOrders ?? []).reduce(
-        (sum: number, o: { order_items: { quantity: number }[] | null }) =>
-          sum + ((o.order_items ?? []).reduce((s: number, i: { quantity: number }) => s + i.quantity, 0)),
-        0
-      )
-
-      // 본사 발주수량 (이번달, retailer == self)
-      const { data: selfOrders } = await supabase
-        .from('orders')
-        .select('order_items(quantity)')
-        .eq('distributor_id', profile.id)
-        .eq('retailer_id', profile.id)
-        .gte('created_at', startOfMonth.toISOString())
-
-      const selfOrderQty = (selfOrders ?? []).reduce(
-        (sum: number, o: { order_items: { quantity: number }[] | null }) =>
-          sum + ((o.order_items ?? []).reduce((s: number, i: { quantity: number }) => s + i.quantity, 0)),
-        0
-      )
-
-      setStats({
-        orderPlacedCount: orderPlacedCount || 0,
-        retailSaleQty,
-        selfOrderQty,
-      })
+        setStats({
+          orderPlacedCount: orderPlacedCount || 0,
+          retailSaleQty,
+          selfOrderQty,
+        })
+      } catch {
+        // silent - keep showing previous data
+      }
     }
 
     fetchData()

@@ -17,37 +17,34 @@ export default function RetailerDashboard() {
     if (!profile) return
 
     const fetchData = async () => {
-      const { data: orders } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('retailer_id', profile.id)
-        .order('created_at', { ascending: false })
-        .limit(5)
+      try {
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('retailer_id', profile.id)
+          .order('created_at', { ascending: false })
+          .limit(5)
 
-      if (orders) setRecentOrders(orders)
+        if (orders) setRecentOrders(orders)
 
-      const { count: total } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('retailer_id', profile.id)
+        const [
+          { count: total },
+          { count: pending },
+          { count: shipped },
+        ] = await Promise.all([
+          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('retailer_id', profile.id),
+          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('retailer_id', profile.id).in('status', ['SUBMITTED', 'APPROVED', 'HQ_RECEIVED', 'PREPARING']),
+          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('retailer_id', profile.id).eq('status', 'SHIPPED'),
+        ])
 
-      const { count: pending } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('retailer_id', profile.id)
-        .in('status', ['SUBMITTED', 'APPROVED', 'HQ_RECEIVED', 'PREPARING'])
-
-      const { count: shipped } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('retailer_id', profile.id)
-        .eq('status', 'SHIPPED')
-
-      setStats({
-        total: total || 0,
-        pending: pending || 0,
-        shipped: shipped || 0,
-      })
+        setStats({
+          total: total || 0,
+          pending: pending || 0,
+          shipped: shipped || 0,
+        })
+      } catch {
+        // silent - keep showing previous data
+      }
     }
 
     fetchData()

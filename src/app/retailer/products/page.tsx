@@ -14,15 +14,18 @@ export default function RetailerProductsPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true)
-      const { data } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('category', { ascending: true })
-        .order('name', { ascending: true })
+      try {
+        const { data } = await supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .order('category', { ascending: true })
+          .order('name', { ascending: true })
 
-      if (data) setProducts(data)
-      setLoading(false)
+        if (data) setProducts(data)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchProducts()
