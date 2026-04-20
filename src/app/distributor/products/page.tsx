@@ -34,57 +34,58 @@ export default function DistributorProductsPage() {
   const fetchData = async () => {
     if (!profile) return
     setLoading(true)
-    const today = new Date().toISOString().slice(0, 10)
+    try {
+      const today = new Date().toISOString().slice(0, 10)
 
-    const [prodRes, priceRes, settingsRes] = await Promise.all([
-      supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('category', { ascending: true })
-        .order('name', { ascending: true }),
-      supabase
-        .from('distributor_price_quotes')
-        .select('*')
-        .eq('distributor_id', profile.id)
-        .lte('effective_from', today)
-        .or(`effective_to.is.null,effective_to.gte.${today}`)
-        .order('effective_from', { ascending: false }),
-      supabase
-        .from('distributor_retailer_product_settings')
-        .select('*')
-        .eq('distributor_id', profile.id),
-    ])
+      const [prodRes, priceRes, settingsRes] = await Promise.all([
+        supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .order('category', { ascending: true })
+          .order('name', { ascending: true }),
+        supabase
+          .from('distributor_price_quotes')
+          .select('*')
+          .eq('distributor_id', profile.id)
+          .lte('effective_from', today)
+          .or(`effective_to.is.null,effective_to.gte.${today}`)
+          .order('effective_from', { ascending: false }),
+        supabase
+          .from('distributor_retailer_product_settings')
+          .select('*')
+          .eq('distributor_id', profile.id),
+      ])
 
-    const quotes: DistributorPriceQuote[] = priceRes.data ?? []
+      const quotes: DistributorPriceQuote[] = priceRes.data ?? []
 
-    // product_id별로 가장 최신 유효 단가 한 건만 사용
-    const priceMap = new Map<string, number>()
-    for (const q of quotes) {
-      if (!priceMap.has(q.product_id)) {
-        priceMap.set(q.product_id, q.unit_price)
+      const priceMap = new Map<string, number>()
+      for (const q of quotes) {
+        if (!priceMap.has(q.product_id)) {
+          priceMap.set(q.product_id, q.unit_price)
+        }
       }
-    }
 
-    // retailer settings map
-    const settingsMap = new Map<string, { moq: number | null; order_unit: number | null; id: string }>()
-    for (const s of (settingsRes.data ?? [])) {
-      settingsMap.set(s.product_id, { moq: s.moq, order_unit: s.order_unit, id: s.id })
-    }
-
-    const merged: ProductWithData[] = (prodRes.data ?? []).map((p: Product) => {
-      const setting = settingsMap.get(p.id)
-      return {
-        ...p,
-        myPrice: priceMap.get(p.id) ?? null,
-        retailerMoq: setting?.moq ?? null,
-        retailerUnit: setting?.order_unit ?? null,
-        settingId: setting?.id ?? null,
+      const settingsMap = new Map<string, { moq: number | null; order_unit: number | null; id: string }>()
+      for (const s of (settingsRes.data ?? [])) {
+        settingsMap.set(s.product_id, { moq: s.moq, order_unit: s.order_unit, id: s.id })
       }
-    })
 
-    setProducts(merged)
-    setLoading(false)
+      const merged: ProductWithData[] = (prodRes.data ?? []).map((p: Product) => {
+        const setting = settingsMap.get(p.id)
+        return {
+          ...p,
+          myPrice: priceMap.get(p.id) ?? null,
+          retailerMoq: setting?.moq ?? null,
+          retailerUnit: setting?.order_unit ?? null,
+          settingId: setting?.id ?? null,
+        }
+      })
+
+      setProducts(merged)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const startEdit = (product: ProductWithData) => {

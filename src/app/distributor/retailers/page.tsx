@@ -30,15 +30,17 @@ export default function RetailersPage() {
 
     const fetchRetailers = async () => {
       setLoading(true)
-      const { data } = await supabase
-        .from('users_profile')
-        .select('*')
-        .eq('distributor_id', profile.id)
-        .eq('role', 'retailer')
-        .order('company_name')
-
-      if (data) setRetailers(data)
-      setLoading(false)
+      try {
+        const { data } = await supabase
+          .from('users_profile')
+          .select('*')
+          .eq('distributor_id', profile.id)
+          .eq('role', 'retailer')
+          .order('company_name')
+        if (data) setRetailers(data)
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchRetailers()

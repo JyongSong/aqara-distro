@@ -35,29 +35,30 @@ export default function DistributorPricingPage() {
   const fetchData = async () => {
     if (!profile) return
     setLoading(true)
-
-    const [quotesRes, retailerRes, prodRes] = await Promise.all([
-      supabase
-        .from('retailer_price_quotes')
-        .select('*, product:products(*), retailer_profile:users_profile!retailer_id(*)')
-        .eq('distributor_id', profile.id)
-        .order('created_at', { ascending: false }),
-      supabase
-        .from('users_profile')
-        .select('*')
-        .eq('role', 'retailer')
-        .eq('distributor_id', profile.id),
-      supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .order('name'),
-    ])
-
-    if (quotesRes.data) setQuotes(quotesRes.data)
-    if (retailerRes.data) setRetailers(retailerRes.data)
-    if (prodRes.data) setProducts(prodRes.data)
-    setLoading(false)
+    try {
+      const [quotesRes, retailerRes, prodRes] = await Promise.all([
+        supabase
+          .from('retailer_price_quotes')
+          .select('*, product:products(*), retailer_profile:users_profile!retailer_id(*)')
+          .eq('distributor_id', profile.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('users_profile')
+          .select('*')
+          .eq('role', 'retailer')
+          .eq('distributor_id', profile.id),
+        supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .order('name'),
+      ])
+      if (quotesRes.data) setQuotes(quotesRes.data)
+      if (retailerRes.data) setRetailers(retailerRes.data)
+      if (prodRes.data) setProducts(prodRes.data)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleProductChange = (productId: string) => {

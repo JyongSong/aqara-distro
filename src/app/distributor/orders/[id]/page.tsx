@@ -29,18 +29,16 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
     if (!profile) return
     const fetchOrder = async () => {
       setLoading(true)
-      const { data: orderData } = await supabase
-        .from('orders')
-        .select('*, retailer:users_profile!retailer_id(company_name)')
-        .eq('id', id)
-        .single()
-      if (orderData) setOrder(orderData)
-      const { data: itemsData } = await supabase
-        .from('order_items')
-        .select('*, product:products(name, product_code, product_url, consumer_price)')
-        .eq('order_id', id)
-      if (itemsData) setItems(itemsData)
-      setLoading(false)
+      try {
+        const [{ data: orderData }, { data: itemsData }] = await Promise.all([
+          supabase.from('orders').select('*, retailer:users_profile!retailer_id(company_name)').eq('id', id).single(),
+          supabase.from('order_items').select('*, product:products(name, product_code, product_url, consumer_price)').eq('order_id', id),
+        ])
+        if (orderData) setOrder(orderData)
+        if (itemsData) setItems(itemsData)
+      } finally {
+        setLoading(false)
+      }
     }
     fetchOrder()
   // eslint-disable-next-line react-hooks/exhaustive-deps
