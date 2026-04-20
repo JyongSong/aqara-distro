@@ -126,7 +126,6 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
     }
 
     const { error } = await supabase.from('orders').update({
-      status: 'APPROVED',
       hq_total: hqTotal,
       fulfillment_type: fulfillmentType,
     }).eq('id', order.id)
@@ -134,6 +133,17 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
     if (error) {
       console.error('[approve error]', error)
       alert(`승인 처리에 실패했습니다: ${error.message}`)
+      setProcessing(false)
+      return
+    }
+
+    const statusRes = await fetch(`/api/orders/${order.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newStatus: 'APPROVED' }),
+    })
+    if (!statusRes.ok) {
+      alert('승인 처리에 실패했습니다. 다시 시도해 주세요.')
       setProcessing(false)
       return
     }
@@ -169,10 +179,12 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
   const handleDistProgress = async (nextStatus: string) => {
     if (!order) return
     setProcessing(true)
-    const updateData: Record<string, unknown> = { status: nextStatus }
-    if (nextStatus === 'SHIPPED') updateData.shipped_at = new Date().toISOString()
-    const { error } = await supabase.from('orders').update(updateData).eq('id', order.id)
-    if (error) { alert('상태 변경에 실패했습니다.'); setProcessing(false); return }
+    const res = await fetch(`/api/orders/${order.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newStatus: nextStatus }),
+    })
+    if (!res.ok) { alert('상태 변경에 실패했습니다.'); setProcessing(false); return }
     setOrder({ ...order, status: nextStatus as Order['status'], ...(nextStatus === 'SHIPPED' ? { shipped_at: new Date().toISOString() } : {}) })
     setProcessing(false)
   }

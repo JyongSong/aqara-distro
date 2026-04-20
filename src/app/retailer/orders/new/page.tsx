@@ -235,12 +235,13 @@ function NewOrderForm() {
     }
 
     // 3. Update status to SUBMITTED
-    const { error: submitError } = await supabase
-      .from('orders')
-      .update({ status: 'SUBMITTED', submitted_at: new Date().toISOString() })
-      .eq('id', order.id)
+    const submitRes = await fetch(`/api/orders/${order.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newStatus: 'SUBMITTED' }),
+    })
 
-    if (submitError) {
+    if (!submitRes.ok) {
       alert('견적 요청 제출에 실패했습니다. 다시 시도해주세요.')
       setSaving(false)
       return
