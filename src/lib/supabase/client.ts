@@ -14,17 +14,17 @@ export function createClient() {
       auth: {
         lock: async <R,>(name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => {
           const prev = lockQueue[name] ?? Promise.resolve()
-          const timeoutMs = _acquireTimeout > 0 ? _acquireTimeout : 30_000
-          const next = prev.then(() =>
-            Promise.race([
-              fn(),
-              new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error(`[supabase-lock] timeout: ${name}`)), timeoutMs)
-              ),
-            ])
-          ) as Promise<R>
+          const next = prev.then(() => fn()) as Promise<R>
           lockQueue[name] = next.catch(() => {})
           return next
+        },
+      },
+      global: {
+        fetch: (url: RequestInfo | URL, options?: RequestInit) => {
+          const controller = new AbortController()
+          const timer = setTimeout(() => controller.abort(), 30_000)
+          return fetch(url, { ...options, signal: controller.signal })
+            .finally(() => clearTimeout(timer))
         },
       },
     }
