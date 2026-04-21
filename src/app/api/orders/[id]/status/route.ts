@@ -101,21 +101,13 @@ export async function PATCH(
       break
 
     case 'HQ_RECEIVED':
-      await Promise.all([
-        sendSms(retailerPhone,
-          `[Aqara] 발주가 본사에 접수되었습니다.\n주문번호: ${orderNumber}\n${itemsSummary}\n${APP_URL}`),
-        ...(isSelfOrder ? [sendSms(distributorPhone,
-          `[Aqara] 발주가 본사에 접수되었습니다.\n주문번호: ${orderNumber}\n${itemsSummary}\n${APP_URL}`)] : []),
-      ])
+      await sendSms(retailerPhone,
+        `[Aqara] 발주가 본사에 접수되었습니다.\n주문번호: ${orderNumber}\n${itemsSummary}\n${APP_URL}`)
       break
 
     case 'SHIPPED':
-      await Promise.all([
-        sendSms(retailerPhone,
-          `[Aqara] 출고되었습니다.\n주문번호: ${orderNumber}\n${itemsSummary}\n빠른 시일 내에 배송될 예정입니다.\n${APP_URL}`),
-        ...(isSelfOrder ? [sendSms(distributorPhone,
-          `[Aqara] 출고되었습니다.\n주문번호: ${orderNumber}\n${itemsSummary}\n빠른 시일 내에 배송될 예정입니다.\n${APP_URL}`)] : []),
-      ])
+      await sendSms(retailerPhone,
+        `[Aqara] 출고되었습니다.\n주문번호: ${orderNumber}\n${itemsSummary}\n빠른 시일 내에 배송될 예정입니다.\n${APP_URL}`)
       break
 
     case 'DELIVERED':
@@ -124,8 +116,6 @@ export async function PATCH(
           `[Aqara] 상품이 수령 확인되었습니다.\n주문번호: ${orderNumber}\n${itemsSummary}\n${APP_URL}`),
         sendSms(hqPhone,
           `[Aqara] 배송 완료\n주문번호: ${orderNumber}\n${isSelfOrder ? `총판: ${distributorName}` : `소매점: ${retailerName}`}`),
-        ...(isSelfOrder ? [sendSms(distributorPhone,
-          `[Aqara] 상품이 수령 확인되었습니다.\n주문번호: ${orderNumber}\n${itemsSummary}\n${APP_URL}`)] : []),
       ])
       break
   }
