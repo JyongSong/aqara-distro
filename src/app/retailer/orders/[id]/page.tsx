@@ -72,6 +72,12 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
       return
     }
     setOrder({ ...order, status: 'ORDER_PLACED' })
+    // SMS: 총판에게 발주 확정 알림
+    fetch(`/api/orders/${order.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newStatus: 'ORDER_PLACED' }),
+    }).catch(console.error)
     setPlacingOrder(false)
   }
 

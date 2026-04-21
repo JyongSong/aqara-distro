@@ -91,6 +91,12 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       const u = updates.find(x => x.id === item.id)
       return u ? { ...item, retailer_unit_price: u.retailer_unit_price, retailer_amount: u.retailer_amount } : item
     }))
+    // SMS: 소매점에게 견적 발송 알림
+    fetch(`/api/orders/${order.id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newStatus: 'QUOTE_SENT' }),
+    }).catch(console.error)
     setProcessing(false)
   }
 
