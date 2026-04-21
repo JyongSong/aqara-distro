@@ -222,7 +222,7 @@ function DirectOrderForm() {
             <select
               value={selectedProduct}
               onChange={e => setSelectedProduct(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
             >
               <option value="">선택</option>
               {products.map(p => (
@@ -237,7 +237,7 @@ function DirectOrderForm() {
               <select
                 value={selectedOption}
                 onChange={e => setSelectedOption(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
               >
                 <option value="">선택</option>
                 {currentProductObj.options.map((opt: { code: string; name: string }) => (
@@ -350,7 +350,7 @@ function DirectOrderForm() {
                 type="text"
                 value={shippingAddress}
                 onChange={e => setShippingAddress(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
                 placeholder="배송지 주소"
               />
             </div>
@@ -360,7 +360,7 @@ function DirectOrderForm() {
                 type="date"
                 value={desiredDate}
                 onChange={e => setDesiredDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
               />
             </div>
           </div>
@@ -370,7 +370,7 @@ function DirectOrderForm() {
               value={note}
               onChange={e => setNote(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
               placeholder="요청사항을 입력하세요"
             />
           </div>
