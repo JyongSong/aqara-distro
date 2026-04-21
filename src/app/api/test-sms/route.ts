@@ -1,11 +1,12 @@
 import { SolapiMessageService } from 'solapi'
 import { NextResponse } from 'next/server'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
   const apiKey    = process.env.SOLAPI_API_KEY
   const apiSecret = process.env.SOLAPI_API_SECRET
   const from      = process.env.SOLAPI_SENDER
-  const to        = process.env.HQ_NOTIFY_PHONE
+  const to        = searchParams.get('to') ?? process.env.HQ_NOTIFY_PHONE
 
   // 환경변수 확인
   if (!apiKey || !apiSecret || !from || !to) {
