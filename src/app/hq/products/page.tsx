@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Product, ProductOption } from '@/lib/types'
-import { formatKRW } from '@/lib/utils'
+import { formatKRW, sortByCategory } from '@/lib/utils'
 
 export default function HQProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -53,7 +53,7 @@ export default function HQProductsPage() {
         .from('products')
         .select('*')
         .order('created_at', { ascending: false })
-      if (data) setProducts(data)
+      if (data) setProducts(sortByCategory(data))
     } finally {
       setLoading(false)
     }

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { Product, DistributorPriceQuote } from '@/lib/types'
-import { formatKRW } from '@/lib/utils'
+import { formatKRW, sortByCategory } from '@/lib/utils'
 
 type ProductWithData = Product & {
   myPrice: number | null
@@ -82,7 +82,7 @@ export default function DistributorProductsPage() {
         }
       })
 
-      setProducts(merged)
+      setProducts(sortByCategory(merged))
     } finally {
       setLoading(false)
     }

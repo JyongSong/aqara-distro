@@ -1,3 +1,17 @@
+// 카테고리 표시 순서
+export const CATEGORY_ORDER = ['도어락', '액세서리', '도어벨', '허브', '컨트롤러', '스위치', '기타']
+
+export function sortByCategory<T extends { category?: string | null; name: string }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    const ai = CATEGORY_ORDER.indexOf(a.category ?? '')
+    const bi = CATEGORY_ORDER.indexOf(b.category ?? '')
+    const aOrder = ai === -1 ? CATEGORY_ORDER.length : ai
+    const bOrder = bi === -1 ? CATEGORY_ORDER.length : bi
+    if (aOrder !== bOrder) return aOrder - bOrder
+    return a.name.localeCompare(b.name, 'ko')
+  })
+}
+
 export function formatKRW(amount: number): string {
   return new Intl.NumberFormat('ko-KR').format(amount) + '원'
 }

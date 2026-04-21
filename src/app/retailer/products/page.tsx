@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Product } from '@/lib/types'
-import { formatKRW } from '@/lib/utils'
+import { formatKRW, sortByCategory } from '@/lib/utils'
 import Link from 'next/link'
 
 export default function RetailerProductsPage() {
@@ -22,7 +22,7 @@ export default function RetailerProductsPage() {
           .order('category', { ascending: true })
           .order('name', { ascending: true })
 
-        if (data) setProducts(data)
+        if (data) setProducts(sortByCategory(data))
       } finally {
         setLoading(false)
       }
