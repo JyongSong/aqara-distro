@@ -22,7 +22,7 @@ export function createClient() {
       global: {
         fetch: (url: RequestInfo | URL, options?: RequestInit) => {
           const controller = new AbortController()
-          const timer = setTimeout(() => controller.abort(), 30_000)
+          const timer = setTimeout(() => controller.abort(), 10_000)
           return fetch(url, { ...options, signal: controller.signal })
             .finally(() => clearTimeout(timer))
         },
