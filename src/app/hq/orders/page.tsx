@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
 import { formatKRW, formatDateTime, cn } from '@/lib/utils'
@@ -21,6 +21,7 @@ export default function HQOrdersPage() {
   const [processing, setProcessing] = useState<string | null>(null)
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const supabase = useMemo(() => createClient(), [])
+  const fetchingRef = useRef(false)
 
   useEffect(() => {
     fetchOrders()
@@ -36,6 +37,8 @@ export default function HQOrdersPage() {
   }, [])
 
   const fetchOrders = async () => {
+    if (fetchingRef.current) return
+    fetchingRef.current = true
     setLoading(true)
     try {
       let query = supabase
@@ -70,6 +73,7 @@ export default function HQOrdersPage() {
       }
     } finally {
       setLoading(false)
+      fetchingRef.current = false
     }
   }
 

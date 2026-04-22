@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
 import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
@@ -34,9 +34,12 @@ export default function RetailerOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const supabase = useMemo(() => createClient(), [])
+  const fetchingRef = useRef(false)
 
   const fetchOrders = useCallback(async () => {
     if (!profile) return
+    if (fetchingRef.current) return
+    fetchingRef.current = true
     setLoading(true)
     try {
       let query = supabase
@@ -53,6 +56,7 @@ export default function RetailerOrdersPage() {
       if (data) setOrders(data as OrderWithItems[])
     } finally {
       setLoading(false)
+      fetchingRef.current = false
     }
   }, [profile, statusFilter, supabase])
 

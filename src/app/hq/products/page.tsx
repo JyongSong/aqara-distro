@@ -32,6 +32,7 @@ export default function HQProductsPage() {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const blobUrlRef = useRef<string | null>(null)
+  const fetchingRef = useRef(false)
 
   useEffect(() => {
     fetchProducts()
@@ -47,6 +48,8 @@ export default function HQProductsPage() {
   }, [])
 
   const fetchProducts = async () => {
+    if (fetchingRef.current) return
+    fetchingRef.current = true
     setLoading(true)
     try {
       const { data } = await supabase
@@ -56,6 +59,7 @@ export default function HQProductsPage() {
       if (data) setProducts(sortByCategory(data))
     } finally {
       setLoading(false)
+      fetchingRef.current = false
     }
   }
 
