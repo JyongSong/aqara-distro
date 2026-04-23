@@ -374,7 +374,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       {/* ═══════════════════════════════════════════════════════════════════════
           SECTION A: SUBMITTED 견적요청 (quote flow) — 임시 비활성화
       ════════════════════════════════════════════════════════════════════════ */}
-      {false && order && (
+      {(false as boolean) && order && (
         <>
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
             <h2 className="text-sm font-semibold text-gray-500 mb-3">견적 요청 정보</h2>
@@ -469,7 +469,9 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">발주 품목</h2>
-            <table className="w-full">
+
+            {/* Desktop table */}
+            <table className="w-full hidden sm:table">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="pb-2 text-left text-xs font-medium text-gray-500">상품명</th>
@@ -491,12 +493,29 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
                 ))}
               </tbody>
             </table>
+
+            {/* Mobile cards */}
+            <div className="sm:hidden divide-y divide-gray-100">
+              {items.map(item => (
+                <div key={item.id} className="py-3 flex justify-between items-center">
+                  <div>
+                    <p className="text-sm text-gray-900">
+                      {item.product?.product_url ? (
+                        <a href={item.product.product_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{item.product.name}</a>
+                      ) : item.product?.name}
+                    </p>
+                    {item.option_code && <p className="text-xs text-gray-400 mt-0.5">{item.option_code}</p>}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 whitespace-nowrap">× {item.quantity}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-2">출고 방법 선택</h2>
             <p className="text-sm text-gray-500 mb-4">승인 후 어떤 방식으로 출고하시겠습니까?</p>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <button onClick={() => handleApprove('hq')} disabled={processing}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50">
                 {processing ? '처리 중...' : '본사 출고'}
@@ -514,7 +533,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       {/* ═══════════════════════════════════════════════════════════════════════
           SECTION C: QUOTE_SENT — 임시 비활성화
       ════════════════════════════════════════════════════════════════════════ */}
-      {false && order && (
+      {(false as boolean) && order && (
         <>
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -591,7 +610,9 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">발주 품목</h2>
-            <table className="w-full">
+
+            {/* Desktop table */}
+            <table className="w-full hidden sm:table">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="pb-2 text-left text-xs font-medium text-gray-500">상품명</th>
@@ -613,6 +634,28 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
                 ))}
               </tbody>
             </table>
+
+            {/* Mobile cards */}
+            <div className="sm:hidden divide-y divide-gray-100">
+              {items.map(item => (
+                <div key={item.id} className="py-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <p className="text-sm text-gray-900">{item.product?.name}</p>
+                      {item.option_code && <p className="text-xs text-gray-400 mt-0.5">{item.option_code}</p>}
+                    </div>
+                    <span className="text-sm text-gray-600 whitespace-nowrap">× {item.quantity}</span>
+                  </div>
+                  {item.retailer_unit_price != null && (
+                    <div className="flex justify-between text-xs text-gray-500 mt-1">
+                      <span>단가 {formatKRW(item.retailer_unit_price)}</span>
+                      <span className="text-gray-900 font-medium">{item.retailer_amount != null ? formatKRW(item.retailer_amount) : '-'}</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
             <div className="border-t border-gray-200 pt-4 mt-4 flex justify-end">
               <div className="space-y-1 text-sm min-w-48">
                 <div className="flex justify-between text-gray-500"><span>공급가액</span><span>{formatKRW(order.retailer_total)}</span></div>
@@ -673,7 +716,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       ════════════════════════════════════════════════════════════════════════ */}
       {isDistFulfillment && distAction && (
         <>
-          <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h2 className="text-sm font-semibold text-gray-500 mb-3">주문 정보</h2>
               <dl className="space-y-2 text-sm">
@@ -704,7 +747,9 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">품목</h2>
-            <table className="w-full">
+
+            {/* Desktop table */}
+            <table className="w-full hidden sm:table">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="pb-2 text-left text-xs font-medium text-gray-500">상품명</th>
@@ -722,6 +767,19 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
                 ))}
               </tbody>
             </table>
+
+            {/* Mobile cards */}
+            <div className="sm:hidden divide-y divide-gray-100">
+              {items.map(item => (
+                <div key={item.id} className="py-3 flex justify-between items-center">
+                  <div>
+                    <p className="text-sm text-gray-900">{item.product?.name}</p>
+                    {item.option_code && <p className="text-xs text-gray-400 mt-0.5">{item.option_code}</p>}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700 whitespace-nowrap">× {item.quantity}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </>
       )}
@@ -731,7 +789,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       ════════════════════════════════════════════════════════════════════════ */}
       {isReadOnly && (
         <>
-          <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h2 className="text-sm font-semibold text-gray-500 mb-3">주문 정보</h2>
               <dl className="space-y-2 text-sm">
@@ -774,7 +832,9 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">주문 품목</h2>
-            <table className="w-full">
+
+            {/* Desktop table */}
+            <table className="w-full hidden lg:table">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="pb-2 text-left text-xs font-medium text-gray-500">상품</th>
@@ -813,7 +873,40 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
               </tbody>
             </table>
 
-            <div className="border-t border-gray-200 pt-4 mt-4 grid grid-cols-2 gap-8">
+            {/* Mobile cards */}
+            <div className="lg:hidden divide-y divide-gray-100">
+              {items.map(item => (
+                <div key={item.id} className="py-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <p className="text-sm text-gray-900 font-medium">
+                        {item.product?.product_url ? (
+                          <a href={item.product.product_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{item.product.name}</a>
+                        ) : item.product?.name}
+                      </p>
+                      {item.option_code && <p className="text-xs text-gray-400 mt-0.5">{item.option_code}</p>}
+                    </div>
+                    <span className="text-sm text-gray-600 whitespace-nowrap">× {item.quantity}</span>
+                  </div>
+                  <div className="mt-1 space-y-0.5">
+                    {order.retailer_total > 0 && item.retailer_unit_price != null && (
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>소매단가 {formatKRW(item.retailer_unit_price)}</span>
+                        <span className="text-gray-900 font-medium">{item.retailer_amount != null ? formatKRW(item.retailer_amount) : '-'}</span>
+                      </div>
+                    )}
+                    {order.hq_total != null && order.hq_total > 0 && item.hq_unit_price != null && (
+                      <div className="flex justify-between text-xs text-gray-500">
+                        <span>본사단가 {formatKRW(item.hq_unit_price)}</span>
+                        <span className="text-blue-600 font-medium">{item.hq_amount ? formatKRW(item.hq_amount) : '-'}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-gray-200 pt-4 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-6">
               {order.retailer_total > 0 && (
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-gray-400">소매 기준</p>

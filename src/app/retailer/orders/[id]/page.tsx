@@ -252,7 +252,9 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
       {/* 주문 품목 */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">주문 품목</h2>
-        <table className="w-full">
+
+        {/* Desktop table */}
+        <table className="w-full hidden sm:table">
           <thead>
             <tr className="border-b border-gray-200">
               <th className="pb-2 text-left text-xs font-medium text-gray-500">상품명</th>
@@ -300,6 +302,37 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
             ))}
           </tbody>
         </table>
+
+        {/* Mobile cards */}
+        <div className="sm:hidden divide-y divide-gray-100">
+          {items.map((item) => (
+            <div key={item.id} className="py-3">
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0 pr-2">
+                  <p className="text-sm text-gray-900 font-medium">
+                    {item.product?.product_url ? (
+                      <a href={item.product.product_url} target="_blank" rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline">{item.product.name}</a>
+                    ) : item.product?.name}
+                  </p>
+                  {item.option_code && <p className="text-xs text-gray-400 mt-0.5">{item.option_code}</p>}
+                </div>
+                <span className="text-sm text-gray-600 whitespace-nowrap">× {item.quantity}</span>
+              </div>
+              {showQuotePrices && item.retailer_unit_price != null && (
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>단가 {formatKRW(item.retailer_unit_price)}</span>
+                  <span className="text-gray-900 font-medium">
+                    {item.retailer_amount != null ? formatKRW(item.retailer_amount) : '-'}
+                  </span>
+                </div>
+              )}
+              {!showQuotePrices && (
+                <p className="text-xs text-gray-400 mt-1">견적 대기</p>
+              )}
+            </div>
+          ))}
+        </div>
 
         {/* 합계 — only shown when prices are confirmed */}
         {isPriceConfirmed && (

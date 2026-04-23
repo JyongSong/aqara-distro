@@ -173,7 +173,7 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* 주문 정보 */}
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h2 className="text-sm font-semibold text-gray-500 mb-3">주문 정보</h2>
           <dl className="space-y-2 text-sm">
@@ -258,7 +258,9 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
       {/* 주문 품목 */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">주문 품목</h2>
-        <table className="w-full">
+
+        {/* Desktop table */}
+        <table className="w-full hidden lg:table">
           <thead>
             <tr className="border-b border-gray-200">
               <th className="pb-2 text-left text-xs font-medium text-gray-500">상품코드</th>
@@ -291,6 +293,31 @@ export default function HQOrderDetailPage({ params }: { params: Promise<{ id: st
             ))}
           </tbody>
         </table>
+
+        {/* Mobile cards */}
+        <div className="lg:hidden divide-y divide-gray-100">
+          {items.map((item) => (
+            <div key={item.id} className="py-3">
+              <div className="flex justify-between items-start mb-1">
+                <div className="flex-1 min-w-0 pr-3">
+                  <p className="text-sm text-gray-900 font-medium">
+                    {item.product?.product_url ? (
+                      <a href={item.product.product_url} target="_blank" rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline">{item.product.name}</a>
+                    ) : item.product?.name}
+                  </p>
+                  {item.option_code && <p className="text-xs text-gray-400 mt-0.5">{item.option_code}</p>}
+                  <p className="text-xs text-gray-400 mt-0.5 font-mono">{item.product?.product_code}</p>
+                </div>
+                <span className="text-sm text-gray-600 whitespace-nowrap">× {item.quantity}</span>
+              </div>
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>본사단가 {item.hq_unit_price ? formatKRW(item.hq_unit_price) : '-'}</span>
+                <span className="text-blue-600 font-medium">{item.hq_amount ? formatKRW(item.hq_amount) : '-'}</span>
+              </div>
+            </div>
+          ))}
+        </div>
 
         {/* 합계 */}
         {order.hq_total > 0 && (
