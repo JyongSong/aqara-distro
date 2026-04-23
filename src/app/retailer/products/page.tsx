@@ -96,14 +96,10 @@ export default function RetailerProductsPage() {
                         <span className="text-gray-300">-</span>
                       )}
                     </td>
+                    {/* 견적 요청 기능 임시 비활성화
                     <td className="px-4 py-3 text-center">
-                      <Link
-                        href={`/retailer/orders/new?product_id=${product.id}`}
-                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700"
-                      >
-                        견적 요청
-                      </Link>
-                    </td>
+                      <Link href={`/retailer/orders/new?product_id=${product.id}`} ...>견적 요청</Link>
+                    </td> */}
                     <td className="px-4 py-3 text-center">
                       <Link
                         href={`/retailer/orders/new-direct?product_id=${product.id}`}
@@ -152,12 +148,9 @@ export default function RetailerProductsPage() {
                       </p>
                     )}
                     <div className="mt-2 flex gap-2">
-                      <Link
-                        href={`/retailer/orders/new?product_id=${product.id}`}
-                        className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700"
-                      >
-                        견적 요청
-                      </Link>
+                      {/* 견적 요청 기능 임시 비활성화
+                      <Link href={`/retailer/orders/new?product_id=${product.id}`} ...>견적 요청</Link>
+                      */}
                       <Link
                         href={`/retailer/orders/new-direct?product_id=${product.id}`}
                         className="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-medium hover:bg-emerald-700"

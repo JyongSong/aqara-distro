@@ -75,7 +75,7 @@ export default function RetailerDashboard() {
         </div>
       </div>
 
-      {/* 빠른 액션 */}
+      {/* 견적 요청 기능 임시 비활성화
       <div className="mb-6 sm:mb-8">
         <Link
           href="/retailer/orders/new"
@@ -84,6 +84,7 @@ export default function RetailerDashboard() {
           + 새 견적 요청
         </Link>
       </div>
+      */}
 
       {/* 최근 견적/발주 */}
       <div className="bg-white rounded-xl border border-gray-200">

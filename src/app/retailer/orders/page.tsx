@@ -87,12 +87,14 @@ export default function RetailerOrdersPage() {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900">견적 / 발주 관리</h1>
           <p className="text-sm text-gray-500 mt-1">견적 요청 및 발주 현황</p>
         </div>
+        {/* 견적 요청 기능 임시 비활성화
         <Link
           href="/retailer/orders/new"
           className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
         >
           + 견적 요청
         </Link>
+        */}
       </div>
 
       {/* 상태 필터 */}
@@ -164,14 +166,16 @@ export default function RetailerOrdersPage() {
                       {formatDateTime(order.created_at)}
                     </td>
                     <td className="px-6 py-3">
-                      {order.status === 'DRAFT' ? (
+                      {/* 견적 요청 기능 임시 비활성화
+                      order.status === 'DRAFT' ? (
                         <button
                           onClick={() => handleSubmitQuote(order.id)}
                           className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs font-medium hover:bg-blue-700"
                         >
                           견적 요청하기
                         </button>
-                      ) : order.status === 'QUOTE_SENT' ? (
+                      ) : */}
+                      {order.status === 'QUOTE_SENT' ? (
                         <Link
                           href={`/retailer/orders/${order.id}`}
                           className="px-3 py-1.5 bg-orange-500 text-white rounded text-xs font-medium hover:bg-orange-600"
@@ -221,28 +225,20 @@ export default function RetailerOrdersPage() {
                     <span className="text-gray-500">품목 {order.order_items?.length ?? 0}개</span>
                   </div>
                   <div className="mt-3">
+                    {/* 견적 요청 기능 임시 비활성화 (원래 코드):
                     {order.status === 'DRAFT' ? (
-                      <button
-                        onClick={() => handleSubmitQuote(order.id)}
-                        className="w-full px-3 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
-                      >
-                        견적 요청하기
-                      </button>
+                      <button onClick={() => handleSubmitQuote(order.id)} ...>견적 요청하기</button>
                     ) : order.status === 'QUOTE_SENT' ? (
-                      <Link
-                        href={`/retailer/orders/${order.id}`}
-                        className="block w-full px-3 py-2 bg-orange-500 text-white rounded text-sm font-medium text-center hover:bg-orange-600"
-                      >
-                        견적 확인
-                      </Link>
+                      <Link ...>견적 확인</Link>
                     ) : (
-                      <Link
-                        href={`/retailer/orders/${order.id}`}
-                        className="block w-full px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm font-medium text-center hover:bg-gray-200"
-                      >
-                        상세
-                      </Link>
-                    )}
+                      <Link ...>상세</Link>
+                    )} */}
+                    <Link
+                      href={`/retailer/orders/${order.id}`}
+                      className="block w-full px-3 py-2 bg-gray-100 text-gray-700 rounded text-sm font-medium text-center hover:bg-gray-200"
+                    >
+                      상세
+                    </Link>
                   </div>
                 </div>
               ))}

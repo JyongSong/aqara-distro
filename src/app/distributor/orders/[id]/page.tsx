@@ -372,9 +372,9 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SECTION A: SUBMITTED 견적요청 (quote flow)
+          SECTION A: SUBMITTED 견적요청 (quote flow) — 임시 비활성화
       ════════════════════════════════════════════════════════════════════════ */}
-      {order.status === 'SUBMITTED' && !isDirect && (
+      {false && order.status === 'SUBMITTED' && !isDirect && (
         <>
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
             <h2 className="text-sm font-semibold text-gray-500 mb-3">견적 요청 정보</h2>
@@ -512,9 +512,9 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
       )}
 
       {/* ═══════════════════════════════════════════════════════════════════════
-          SECTION C: QUOTE_SENT
+          SECTION C: QUOTE_SENT — 임시 비활성화
       ════════════════════════════════════════════════════════════════════════ */}
-      {order.status === 'QUOTE_SENT' && (
+      {false && order.status === 'QUOTE_SENT' && (
         <>
           <div className="grid grid-cols-2 gap-6 mb-6">
             <div className="bg-white rounded-xl border border-gray-200 p-6">
