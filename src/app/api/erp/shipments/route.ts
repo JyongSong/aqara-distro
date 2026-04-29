@@ -28,13 +28,13 @@ export async function GET(req: NextRequest) {
           CAST(L.QT_GIR - L.QT_GI AS INT) AS qty_pending,
           NULLIF(LTRIM(RTRIM(CZ.NO_SONG)), '')    AS tracking_no,
           NULLIF(LTRIM(RTRIM(CZ.CD_DLV_SHOP)), '') AS carrier_code,
-          CASE CAST(DLV.TP_DLV AS VARCHAR)
+          CASE CAST(DLV2.TP_DLV AS VARCHAR)
             WHEN '1'  THEN '택배'
             WHEN '2'  THEN '퀵서비스'
             WHEN '4'  THEN '고객사직접수령'
             WHEN '5'  THEN '직접배송(아카라)'
             WHEN '99' THEN '기타'
-            ELSE CAST(DLV.TP_DLV AS VARCHAR)
+            ELSE CAST(DLV2.TP_DLV AS VARCHAR)
           END                             AS delivery_method,
           P.LN_PARTNER                    AS partner_name
         FROM NEOE.SA_GIRH H
@@ -48,8 +48,8 @@ export async function GET(req: NextRequest) {
           ON L.NO_SO = SOH.NO_SO AND L.CD_COMPANY = SOH.CD_COMPANY AND SOH.NO_HST = 0
         LEFT JOIN NEOE.SA_SOL SOL
           ON L.NO_SO = SOL.NO_SO AND L.SEQ_SO = SOL.SEQ_SO AND L.CD_COMPANY = SOL.CD_COMPANY AND SOL.NO_HST = 0
-        LEFT JOIN NEOE.SA_SOL_DLV DLV
-          ON L.NO_SO = DLV.NO_SO AND L.SEQ_SO = DLV.SEQ_SO AND L.CD_COMPANY = DLV.CD_COMPANY
+        LEFT JOIN NEOE.SA_SOL_DLV DLV2
+          ON L.NO_SO = DLV2.NO_SO AND L.SEQ_SO = DLV2.SEQ_SO AND L.CD_COMPANY = DLV2.CD_COMPANY
         LEFT JOIN NEOE.CZ_SA_ORDER CZ
           ON L.NO_SO = CZ.NO_ORDER AND L.SEQ_SO = CZ.SEQ_ORDER AND L.CD_COMPANY = CZ.CD_COMPANY
         WHERE H.CD_COMPANY = '1000'

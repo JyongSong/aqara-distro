@@ -133,12 +133,11 @@ export default function HQShipmentsPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">의뢰일</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">의뢰번호</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">수주번호</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">거래처PO</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">온라인주문번호</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">품목명</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">의뢰</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">출하</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">상태</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">배송방법</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">송장번호</th>
                   </tr>
                 </thead>
@@ -153,7 +152,7 @@ export default function HQShipmentsPage() {
                         <td className="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">{row.req_date}</td>
                         <td className="px-4 py-3 text-sm font-mono text-gray-700">{row.req_no}</td>
                         <td className="px-4 py-3 text-sm font-mono text-gray-600">{row.so_no}</td>
-                        <td className="px-4 py-3 text-sm text-blue-600">{row.po_partner || <span className="text-gray-300">-</span>}</td>
+                        <td className="px-4 py-3 text-sm text-blue-600">{row.online_order_no || <span className="text-gray-300">-</span>}</td>
                         <td className="px-4 py-3 text-sm text-gray-900">{row.item_name}</td>
                         <td className="px-4 py-3 text-right text-sm text-gray-600">{row.qty_req}</td>
                         <td className="px-4 py-3 text-right text-sm text-gray-600">{row.qty_shipped}</td>
@@ -166,7 +165,6 @@ export default function HQShipmentsPage() {
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{row.delivery_method || '-'}</td>
                         <td className="px-4 py-3 text-sm">
                           {row.tracking_no
                             ? <span className="font-mono text-blue-700">{row.tracking_no}</span>
@@ -195,12 +193,11 @@ export default function HQShipmentsPage() {
                       )}
                     </div>
                     <p className="text-xs text-gray-400">{row.req_date} · {row.req_no}</p>
-                    {row.po_partner && (
-                      <p className="text-xs text-blue-600 mt-0.5">PO: {row.po_partner}</p>
+                    {row.online_order_no && (
+                      <p className="text-xs text-blue-600 mt-0.5">온라인주문: {row.online_order_no}</p>
                     )}
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
                       <span>의뢰 {row.qty_req} / 출하 {row.qty_shipped}</span>
-                      <span>{row.delivery_method || ''}</span>
                     </div>
                     {row.tracking_no && (
                       <p className="text-xs font-mono text-blue-700 mt-1">📦 {row.tracking_no}</p>
