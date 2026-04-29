@@ -98,6 +98,7 @@ export interface Order {
   approved_by: string | null
   shipped_at: string | null
   delivered_at: string | null
+  tracking_number: string | null
   created_at: string
   updated_at: string
   retailer?: UserProfile

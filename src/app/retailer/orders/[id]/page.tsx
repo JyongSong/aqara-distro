@@ -239,6 +239,12 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
               <dt className="text-gray-500">배송지</dt>
               <dd className="text-gray-900 text-right max-w-[60%]">{order.shipping_address || '-'}</dd>
             </div>
+            {order.tracking_number && (
+              <div className="flex justify-between">
+                <dt className="text-gray-500">송장번호</dt>
+                <dd className="font-mono text-blue-700 font-medium">{order.tracking_number}</dd>
+              </div>
+            )}
             {order.note && (
               <div className="flex justify-between">
                 <dt className="text-gray-500">비고</dt>

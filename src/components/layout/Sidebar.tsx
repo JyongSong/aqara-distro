@@ -35,10 +35,11 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
   hq: [
     { label: '대시보드', href: '/hq/dashboard', icon: '📊' },
     { label: '주문 관리', href: '/hq/orders', icon: '📋' },
+    { label: '출하현황', href: '/hq/shipments', icon: '🚚' },
     { label: '상품 관리', href: '/hq/products', icon: '📦' },
     { label: '단가 관리', href: '/hq/pricing', icon: '💰' },
     { label: '사용자 관리', href: '/hq/users', icon: '👥' },
-    { label: '물류 관리', href: '/open/logistics', icon: '🚚', external: true },
+    { label: '물류 관리', href: '/open/logistics', icon: '🏭', external: true },
     { label: '계정 설정', href: '/hq/settings', icon: '⚙️' },
   ],
 }

@@ -800,6 +800,7 @@ export default function DistributorOrderDetailPage({ params }: { params: Promise
                 {order.note && <div className="flex justify-between"><dt className="text-gray-500">비고</dt><dd>{order.note}</dd></div>}
                 {order.approved_at && <div className="flex justify-between"><dt className="text-gray-500">승인일</dt><dd>{formatDateTime(order.approved_at)}</dd></div>}
                 {order.shipped_at && <div className="flex justify-between"><dt className="text-gray-500">출고일</dt><dd>{formatDateTime(order.shipped_at)}</dd></div>}
+                {order.tracking_number && <div className="flex justify-between"><dt className="text-gray-500">송장번호</dt><dd className="font-mono text-blue-700 font-medium">{order.tracking_number}</dd></div>}
               </dl>
             </div>
 
