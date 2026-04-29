@@ -26,24 +26,17 @@ export async function GET(req: NextRequest) {
           CAST(L.QT_GIR AS INT)           AS qty_req,
           CAST(L.QT_GI  AS INT)           AS qty_shipped,
           CAST(L.QT_GIR - L.QT_GI AS INT) AS qty_pending,
-          NULLIF(LTRIM(RTRIM(CZ.NO_SONG)), '')    AS cz_tracking_no,
+          NULLIF(LTRIM(RTRIM(CZ.NO_SONG)),     '') AS cz_tracking_no,
           NULLIF(LTRIM(RTRIM(CZ.CD_DLV_SHOP)), '') AS carrier_code,
+          NULLIF(LTRIM(RTRIM(CZ.NM_RECEIVE)),  '') AS recipient_name,
           (SELECT TOP 1 NULLIF(LTRIM(RTRIM(P.NO_SONG)), '')
-           FROM NEOE.MM_QTIO QT
-           JOIN NEOE.MM_QTIOH QH ON QT.NO_IO = QH.NO_IO AND QT.CD_COMPANY = QH.CD_COMPANY
-           JOIN NEOE.CZ_PU_INOUT_CONF_PROC P ON QH.NO_IO = P.NO_RCV AND QH.CD_COMPANY = P.CD_COMPANY
-           WHERE QT.NO_PSO_MGMT = L.NO_SO
-             AND CAST(QT.NO_PSOLINE_MGMT AS INT) = CAST(L.SEQ_SO AS INT)
-             AND QT.CD_COMPANY = L.CD_COMPANY
-             AND NULLIF(LTRIM(RTRIM(P.NO_SONG)), '') IS NOT NULL)  AS proc_song,
+           FROM NEOE.CZ_PU_INOUT_CONF_PROC P
+           WHERE P.NO_RCV = H.NO_GIR AND P.CD_COMPANY = H.CD_COMPANY
+             AND NULLIF(LTRIM(RTRIM(P.NO_SONG)), '') IS NOT NULL) AS proc_song,
           (SELECT TOP 1 NULLIF(LTRIM(RTRIM(P.DC_RMK)), '')
-           FROM NEOE.MM_QTIO QT
-           JOIN NEOE.MM_QTIOH QH ON QT.NO_IO = QH.NO_IO AND QT.CD_COMPANY = QH.CD_COMPANY
-           JOIN NEOE.CZ_PU_INOUT_CONF_PROC P ON QH.NO_IO = P.NO_RCV AND QH.CD_COMPANY = P.CD_COMPANY
-           WHERE QT.NO_PSO_MGMT = L.NO_SO
-             AND CAST(QT.NO_PSOLINE_MGMT AS INT) = CAST(L.SEQ_SO AS INT)
-             AND QT.CD_COMPANY = L.CD_COMPANY
-             AND NULLIF(LTRIM(RTRIM(P.DC_RMK)), '') IS NOT NULL)   AS proc_rmk,
+           FROM NEOE.CZ_PU_INOUT_CONF_PROC P
+           WHERE P.NO_RCV = H.NO_GIR AND P.CD_COMPANY = H.CD_COMPANY
+             AND NULLIF(LTRIM(RTRIM(P.DC_RMK)), '') IS NOT NULL)  AS proc_rmk,
           CASE CAST(DLV2.TP_DLV AS VARCHAR)
             WHEN '1'  THEN '택배'
             WHEN '2'  THEN '퀵서비스'
@@ -52,14 +45,14 @@ export async function GET(req: NextRequest) {
             WHEN '99' THEN '기타'
             ELSE CAST(DLV2.TP_DLV AS VARCHAR)
           END                             AS delivery_method,
-          P.LN_PARTNER                    AS partner_name
+          PA.LN_PARTNER                   AS partner_name
         FROM NEOE.SA_GIRH H
         JOIN NEOE.SA_GIRL L
           ON H.NO_GIR = L.NO_GIR AND H.CD_COMPANY = L.CD_COMPANY
         LEFT JOIN NEOE.MA_PITEM I
           ON L.CD_ITEM = I.CD_ITEM AND I.CD_COMPANY = '1000'
-        LEFT JOIN NEOE.MA_PARTNER P
-          ON H.CD_PARTNER = P.CD_PARTNER AND H.CD_COMPANY = P.CD_COMPANY
+        LEFT JOIN NEOE.MA_PARTNER PA
+          ON H.CD_PARTNER = PA.CD_PARTNER AND H.CD_COMPANY = PA.CD_COMPANY
         LEFT JOIN NEOE.SA_SOH SOH
           ON L.NO_SO = SOH.NO_SO AND L.CD_COMPANY = SOH.CD_COMPANY AND SOH.NO_HST = 0
         LEFT JOIN NEOE.SA_SOL SOL
@@ -76,7 +69,7 @@ export async function GET(req: NextRequest) {
         ORDER BY H.DT_GIR DESC, H.NO_GIR, L.SEQ_GIR
       `)
 
-    // 송장번호 조합: CZ_PU_INOUT_CONF_PROC (NO_SONG + DC_RMK) → CZ_SA_ORDER 순으로 우선
+    // 송장번호: CZ_PU_INOUT_CONF_PROC(NO_GIR 직접 조회) 우선, 없으면 CZ_SA_ORDER
     const data = result.recordset.map(row => {
       const seen = new Set<string>()
       const addNums = (raw: string | null) => {
@@ -104,6 +97,7 @@ export async function GET(req: NextRequest) {
         tracking_no:     seen.size > 0 ? Array.from(seen).join('\n') : null,
         carrier_code:    row.carrier_code,
         delivery_method: row.delivery_method,
+        recipient_name:  row.recipient_name ?? null,
         partner_name:    row.partner_name,
       }
     })

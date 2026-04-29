@@ -17,6 +17,7 @@ type ShipmentRow = {
   tracking_no: string | null
   carrier_code: string | null
   delivery_method: string | null
+  recipient_name: string | null
   partner_name: string
 }
 
@@ -138,6 +139,7 @@ export default function HQShipmentsPage() {
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">의뢰</th>
                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">출하</th>
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">상태</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">수취인</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">송장번호</th>
                   </tr>
                 </thead>
@@ -165,6 +167,7 @@ export default function HQShipmentsPage() {
                             </span>
                           )}
                         </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{row.recipient_name || <span className="text-gray-300">-</span>}</td>
                         <td className="px-4 py-3 text-sm">
                           {row.tracking_no
                             ? <span className="font-mono text-blue-700 whitespace-pre-line">{row.tracking_no}</span>
@@ -195,6 +198,9 @@ export default function HQShipmentsPage() {
                     <p className="text-xs text-gray-400">{row.req_date} · {row.req_no}</p>
                     {row.online_order_no && (
                       <p className="text-xs text-blue-600 mt-0.5">온라인주문: {row.online_order_no}</p>
+                    )}
+                    {row.recipient_name && (
+                      <p className="text-xs text-gray-600 mt-0.5">수취인: {row.recipient_name}</p>
                     )}
                     <div className="flex justify-between text-xs text-gray-500 mt-1">
                       <span>의뢰 {row.qty_req} / 출하 {row.qty_shipped}</span>

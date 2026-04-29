@@ -51,7 +51,7 @@ export async function getErpTrackingNumber(orderNumber: string): Promise<string 
   try {
     const pool = await getErpPool()
 
-    // 1순위: SA_GIRL → MM_QTIO → MM_QTIOH → CZ_PU_INOUT_CONF_PROC
+    // 1순위: SA_SOH → SA_GIRL → CZ_PU_INOUT_CONF_PROC (NO_GIR = NO_RCV 직접 연결)
     const r1 = await pool.request()
       .input('orderNumber', sql.VarChar(100), orderNumber)
       .query(`
@@ -61,14 +61,8 @@ export async function getErpTrackingNumber(orderNumber: string): Promise<string 
         FROM NEOE.SA_SOH SOH
         JOIN NEOE.SA_GIRL GIRL
           ON SOH.NO_SO = GIRL.NO_SO AND SOH.CD_COMPANY = GIRL.CD_COMPANY
-        JOIN NEOE.MM_QTIO QTIO
-          ON GIRL.NO_SO = QTIO.NO_PSO_MGMT
-         AND CAST(GIRL.SEQ_SO AS INT) = CAST(QTIO.NO_PSOLINE_MGMT AS INT)
-         AND GIRL.CD_COMPANY = QTIO.CD_COMPANY
-        JOIN NEOE.MM_QTIOH QTIOH
-          ON QTIO.NO_IO = QTIOH.NO_IO AND QTIO.CD_COMPANY = QTIOH.CD_COMPANY
         JOIN NEOE.CZ_PU_INOUT_CONF_PROC P
-          ON QTIOH.NO_IO = P.NO_RCV AND QTIOH.CD_COMPANY = P.CD_COMPANY
+          ON GIRL.NO_GIR = P.NO_RCV AND GIRL.CD_COMPANY = P.CD_COMPANY
         WHERE SOH.CD_COMPANY = '1000'
           AND SOH.NO_HST = 0
           AND SOH.NO_PO_PARTNER = @orderNumber
