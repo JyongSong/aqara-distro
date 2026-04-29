@@ -185,28 +185,47 @@ export default function HQShipmentsPage() {
             <div className="lg:hidden divide-y divide-gray-100">
               {rows.map((row, i) => {
                 const isDone = row.qty_pending === 0 && row.qty_shipped > 0
+                const trackingList = row.tracking_no ? row.tracking_no.split('\n').filter(Boolean) : []
                 return (
-                  <div key={i} className={cn('p-4', isDone && 'bg-green-50')}>
-                    <div className="flex justify-between items-start mb-1">
-                      <p className="text-sm font-medium text-gray-900 flex-1 pr-2">{row.item_name}</p>
-                      {isDone ? (
-                        <span className="text-xs font-medium text-green-600 whitespace-nowrap">출하완료</span>
-                      ) : (
-                        <span className="text-xs font-medium text-orange-500 whitespace-nowrap">미출하 {row.qty_pending}</span>
-                      )}
+                  <div key={i} className={cn('px-4 py-3', isDone && 'bg-green-50')}>
+                    {/* 품목명 + 상태 */}
+                    <div className="flex justify-between items-start mb-1.5">
+                      <p className="text-sm font-semibold text-gray-900 flex-1 pr-2 leading-tight">{row.item_name}</p>
+                      <span className={cn(
+                        'text-xs font-medium px-2 py-0.5 rounded-full whitespace-nowrap',
+                        isDone ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-600'
+                      )}>
+                        {isDone ? '출하완료' : `미출하 ${row.qty_pending}`}
+                      </span>
                     </div>
-                    <p className="text-xs text-gray-400">{row.req_date} · {row.req_no}</p>
-                    {row.online_order_no && (
-                      <p className="text-xs text-blue-600 mt-0.5">온라인주문: {row.online_order_no}</p>
-                    )}
-                    {row.recipient_name && (
-                      <p className="text-xs text-gray-600 mt-0.5">수취인: {row.recipient_name}</p>
-                    )}
-                    <div className="flex justify-between text-xs text-gray-500 mt-1">
-                      <span>의뢰 {row.qty_req} / 출하 {row.qty_shipped}</span>
+
+                    {/* 날짜 + 의뢰번호 + 수량 */}
+                    <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
+                      <span>{row.req_date} · <span className="font-mono">{row.req_no}</span></span>
+                      <span className="text-gray-500">의뢰 {row.qty_req} / 출하 {row.qty_shipped}</span>
                     </div>
-                    {row.tracking_no && (
-                      <p className="text-xs font-mono text-blue-700 mt-1 whitespace-pre-line">📦 {row.tracking_no}</p>
+
+                    {/* 온라인주문번호 + 수취인 */}
+                    {(row.online_order_no || row.recipient_name) && (
+                      <div className="flex items-center gap-3 text-xs mb-1.5">
+                        {row.online_order_no && (
+                          <span className="text-blue-600 font-medium">{row.online_order_no}</span>
+                        )}
+                        {row.recipient_name && (
+                          <span className="text-gray-500">👤 {row.recipient_name}</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 송장번호 chips */}
+                    {trackingList.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {trackingList.map((no, j) => (
+                          <span key={j} className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded text-xs font-mono text-blue-700">
+                            📦 {no}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                 )
