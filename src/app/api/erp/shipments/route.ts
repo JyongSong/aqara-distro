@@ -26,8 +26,24 @@ export async function GET(req: NextRequest) {
           CAST(L.QT_GIR AS INT)           AS qty_req,
           CAST(L.QT_GI  AS INT)           AS qty_shipped,
           CAST(L.QT_GIR - L.QT_GI AS INT) AS qty_pending,
-          NULLIF(LTRIM(RTRIM(CZ.NO_SONG)), '')    AS tracking_no,
+          NULLIF(LTRIM(RTRIM(CZ.NO_SONG)), '')    AS cz_tracking_no,
           NULLIF(LTRIM(RTRIM(CZ.CD_DLV_SHOP)), '') AS carrier_code,
+          (SELECT TOP 1 NULLIF(LTRIM(RTRIM(P.NO_SONG)), '')
+           FROM NEOE.MM_QTIO QT
+           JOIN NEOE.MM_QTIOH QH ON QT.NO_IO = QH.NO_IO AND QT.CD_COMPANY = QH.CD_COMPANY
+           JOIN NEOE.CZ_PU_INOUT_CONF_PROC P ON QH.NO_IO = P.NO_RCV AND QH.CD_COMPANY = P.CD_COMPANY
+           WHERE QT.NO_PSO_MGMT = L.NO_SO
+             AND CAST(QT.NO_PSOLINE_MGMT AS INT) = CAST(L.SEQ_SO AS INT)
+             AND QT.CD_COMPANY = L.CD_COMPANY
+             AND NULLIF(LTRIM(RTRIM(P.NO_SONG)), '') IS NOT NULL)  AS proc_song,
+          (SELECT TOP 1 NULLIF(LTRIM(RTRIM(P.DC_RMK)), '')
+           FROM NEOE.MM_QTIO QT
+           JOIN NEOE.MM_QTIOH QH ON QT.NO_IO = QH.NO_IO AND QT.CD_COMPANY = QH.CD_COMPANY
+           JOIN NEOE.CZ_PU_INOUT_CONF_PROC P ON QH.NO_IO = P.NO_RCV AND QH.CD_COMPANY = P.CD_COMPANY
+           WHERE QT.NO_PSO_MGMT = L.NO_SO
+             AND CAST(QT.NO_PSOLINE_MGMT AS INT) = CAST(L.SEQ_SO AS INT)
+             AND QT.CD_COMPANY = L.CD_COMPANY
+             AND NULLIF(LTRIM(RTRIM(P.DC_RMK)), '') IS NOT NULL)   AS proc_rmk,
           CASE CAST(DLV2.TP_DLV AS VARCHAR)
             WHEN '1'  THEN '택배'
             WHEN '2'  THEN '퀵서비스'
@@ -60,7 +76,39 @@ export async function GET(req: NextRequest) {
         ORDER BY H.DT_GIR DESC, H.NO_GIR, L.SEQ_GIR
       `)
 
-    return NextResponse.json({ data: result.recordset })
+    // 송장번호 조합: CZ_PU_INOUT_CONF_PROC (NO_SONG + DC_RMK) → CZ_SA_ORDER 순으로 우선
+    const data = result.recordset.map(row => {
+      const seen = new Set<string>()
+      const addNums = (raw: string | null) => {
+        if (!raw) return
+        raw.split('/').forEach(part => {
+          const d = part.replace(/\D/g, '')
+          if (d.length >= 8) seen.add(d)
+        })
+      }
+      addNums(row.proc_song)
+      addNums(row.proc_rmk)
+      if (seen.size === 0) addNums(row.cz_tracking_no)
+
+      return {
+        req_no:          row.req_no,
+        req_date:        row.req_date,
+        so_no:           row.so_no,
+        po_partner:      row.po_partner,
+        online_order_no: row.online_order_no,
+        item_name:       row.item_name,
+        item_code:       row.item_code,
+        qty_req:         row.qty_req,
+        qty_shipped:     row.qty_shipped,
+        qty_pending:     row.qty_pending,
+        tracking_no:     seen.size > 0 ? Array.from(seen).join('\n') : null,
+        carrier_code:    row.carrier_code,
+        delivery_method: row.delivery_method,
+        partner_name:    row.partner_name,
+      }
+    })
+
+    return NextResponse.json({ data })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'ERP 연결 실패'
     console.error('[ERP shipments]', err)

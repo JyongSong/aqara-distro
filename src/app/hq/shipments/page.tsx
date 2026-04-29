@@ -167,7 +167,7 @@ export default function HQShipmentsPage() {
                         </td>
                         <td className="px-4 py-3 text-sm">
                           {row.tracking_no
-                            ? <span className="font-mono text-blue-700">{row.tracking_no}</span>
+                            ? <span className="font-mono text-blue-700 whitespace-pre-line">{row.tracking_no}</span>
                             : <span className="text-gray-300">-</span>
                           }
                         </td>
@@ -200,7 +200,7 @@ export default function HQShipmentsPage() {
                       <span>의뢰 {row.qty_req} / 출하 {row.qty_shipped}</span>
                     </div>
                     {row.tracking_no && (
-                      <p className="text-xs font-mono text-blue-700 mt-1">📦 {row.tracking_no}</p>
+                      <p className="text-xs font-mono text-blue-700 mt-1 whitespace-pre-line">📦 {row.tracking_no}</p>
                     )}
                   </div>
                 )

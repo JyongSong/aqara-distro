@@ -24,13 +24,69 @@ export async function getErpPool(): Promise<sql.ConnectionPool> {
 }
 
 /**
+ * NO_SONG / DC_RMK 에서 숫자만 추출하여 중복 제거 후 줄바꿈으로 합침
+ * DC_RMK 형식: "462165832181/462165832192/텍스트 ..."
+ */
+function extractTrackingNumbers(noSong: string | null, dcRmk: string | null): string | null {
+  const seen = new Set<string>()
+
+  const addDigits = (raw: string) => {
+    const d = raw.replace(/\D/g, '')
+    if (d.length >= 8) seen.add(d)
+  }
+
+  if (noSong) addDigits(noSong)
+  if (dcRmk) dcRmk.split('/').forEach(addDigits)
+
+  if (seen.size === 0) return null
+  return Array.from(seen).join('\n')
+}
+
+/**
  * 주문번호(NO_PO_PARTNER)로 ERP 송장번호 조회
- * NO_PO_PARTNER = aqara-distro order_number 규칙을 따를 때 동작
+ * 1순위: CZ_PU_INOUT_CONF_PROC (NO_SONG + DC_RMK)
+ * 2순위: CZ_SA_ORDER.NO_SONG
  */
 export async function getErpTrackingNumber(orderNumber: string): Promise<string | null> {
   try {
     const pool = await getErpPool()
-    const result = await pool.request()
+
+    // 1순위: SA_GIRL → MM_QTIO → MM_QTIOH → CZ_PU_INOUT_CONF_PROC
+    const r1 = await pool.request()
+      .input('orderNumber', sql.VarChar(100), orderNumber)
+      .query(`
+        SELECT DISTINCT
+          NULLIF(LTRIM(RTRIM(P.NO_SONG)), '') AS no_song,
+          NULLIF(LTRIM(RTRIM(P.DC_RMK)),  '') AS dc_rmk
+        FROM NEOE.SA_SOH SOH
+        JOIN NEOE.SA_GIRL GIRL
+          ON SOH.NO_SO = GIRL.NO_SO AND SOH.CD_COMPANY = GIRL.CD_COMPANY
+        JOIN NEOE.MM_QTIO QTIO
+          ON GIRL.NO_SO = QTIO.NO_PSO_MGMT
+         AND CAST(GIRL.SEQ_SO AS INT) = CAST(QTIO.NO_PSOLINE_MGMT AS INT)
+         AND GIRL.CD_COMPANY = QTIO.CD_COMPANY
+        JOIN NEOE.MM_QTIOH QTIOH
+          ON QTIO.NO_IO = QTIOH.NO_IO AND QTIO.CD_COMPANY = QTIOH.CD_COMPANY
+        JOIN NEOE.CZ_PU_INOUT_CONF_PROC P
+          ON QTIOH.NO_IO = P.NO_RCV AND QTIOH.CD_COMPANY = P.CD_COMPANY
+        WHERE SOH.CD_COMPANY = '1000'
+          AND SOH.NO_HST = 0
+          AND SOH.NO_PO_PARTNER = @orderNumber
+          AND (NULLIF(LTRIM(RTRIM(P.NO_SONG)), '') IS NOT NULL
+            OR NULLIF(LTRIM(RTRIM(P.DC_RMK)),  '') IS NOT NULL)
+      `)
+
+    if (r1.recordset.length > 0) {
+      const combined = r1.recordset
+        .map(row => extractTrackingNumbers(row.no_song, row.dc_rmk))
+        .filter(Boolean)
+        .join('\n')
+      const unique = Array.from(new Set(combined.split('\n').filter(Boolean)))
+      if (unique.length > 0) return unique.join('\n')
+    }
+
+    // 2순위: CZ_SA_ORDER.NO_SONG
+    const r2 = await pool.request()
       .input('orderNumber', sql.VarChar(100), orderNumber)
       .query(`
         SELECT TOP 1 NULLIF(LTRIM(RTRIM(CZ.NO_SONG)), '') AS tracking_no
@@ -44,7 +100,8 @@ export async function getErpTrackingNumber(orderNumber: string): Promise<string 
           AND SOH.NO_PO_PARTNER = @orderNumber
           AND NULLIF(LTRIM(RTRIM(CZ.NO_SONG)), '') IS NOT NULL
       `)
-    return result.recordset[0]?.tracking_no ?? null
+
+    return r2.recordset[0]?.tracking_no ?? null
   } catch {
     return null
   }
