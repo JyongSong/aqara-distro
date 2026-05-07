@@ -67,6 +67,14 @@ export default function OpenDashboardPage() {
   const now = new Date()
   const monthLabel = `${now.getMonth() + 1}월`
 
+  // 클라이언트에서 레이블 고정 (HQ 대시보드와 동일 방식)
+  const recent3Months = [1, 2, 3].map(i => {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const label = `${d.getMonth() + 1}월`
+    const entry = stats?.recent3Months?.find(m => m.label === label)
+    return { label, sales: entry?.sales ?? 0 }
+  })
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -143,7 +151,7 @@ export default function OpenDashboardPage() {
           <div>
             <p className="text-xs text-gray-400 mb-2">최근 3개월</p>
             <div className="grid grid-cols-3 gap-3">
-              {(stats?.recent3Months ?? [{ label: '-', sales: 0 }, { label: '-', sales: 0 }, { label: '-', sales: 0 }]).map(m => (
+              {recent3Months.map(m => (
                 <div key={m.label} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
                   <p className="text-xs text-gray-500 font-medium mb-1">{m.label}</p>
                   <p className="text-base sm:text-lg font-bold text-gray-700">
