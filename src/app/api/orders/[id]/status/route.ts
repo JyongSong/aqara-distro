@@ -116,7 +116,11 @@ export async function PATCH(
           await supabase.from('orders').update({ tracking_number: trackingNo }).eq('id', id)
         }
       }
-      const trackingLine = trackingNo ? `송장번호: ${trackingNo}\n` : ''
+      // 복수 송장이면 첫 번째만 SMS에 포함
+      const firstTracking = trackingNo ? trackingNo.split('\n')[0] : null
+      const trackingLine  = firstTracking
+        ? `송장번호: ${firstTracking}\n택배사: 한진택배\n`
+        : ''
 
       await Promise.all([
         sendSms(retailerPhone,
