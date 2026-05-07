@@ -1,15 +1,26 @@
 import { createClient } from '@supabase/supabase-js'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET() {
+function toDateStr(d: Date) { return d.toISOString().slice(0, 10) }
+
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url)
+  const now = new Date()
+
+  const defaultFrom = toDateStr(new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()))
+  const defaultTo   = toDateStr(now)
+
+  const dateFrom = searchParams.get('from') || defaultFrom
+  const dateTo   = searchParams.get('to')   || defaultTo
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString()
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const todayStart = toDateStr(now)
+  const monthStart = toDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
+  const rangeEnd   = dateTo + 'T23:59:59'
 
   type ShippedOrder = { hq_total: number | null; shipped_at: string | null }
 
@@ -34,7 +45,10 @@ export async function GET() {
   ])
 
   const orders: ShippedOrder[] = shippedOrders ?? []
-  const totalSales = orders.reduce((s, o) => s + (o.hq_total || 0), 0)
+
+  const periodSales = orders
+    .filter(o => o.shipped_at && o.shipped_at >= dateFrom && o.shipped_at <= rangeEnd)
+    .reduce((s, o) => s + (o.hq_total || 0), 0)
   const monthSales = orders
     .filter(o => o.shipped_at && o.shipped_at >= monthStart)
     .reduce((s, o) => s + (o.hq_total || 0), 0)
@@ -43,14 +57,16 @@ export async function GET() {
     .reduce((s, o) => s + (o.hq_total || 0), 0)
 
   return NextResponse.json({
-    totalOrders: totalOrders || 0,
-    pendingShipment: pendingShipment || 0,
-    products: products || 0,
-    distributors: distributors || 0,
-    activeRetailers: activeRetailers || 0,
-    totalSales,
+    totalOrders:    totalOrders    || 0,
+    pendingShipment:pendingShipment|| 0,
+    products:       products       || 0,
+    distributors:   distributors   || 0,
+    activeRetailers:activeRetailers|| 0,
+    periodSales,
     monthSales,
     todaySales,
+    dateFrom,
+    dateTo,
     updatedAt: now.toISOString(),
   })
 }
