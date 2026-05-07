@@ -63,9 +63,9 @@ export async function GET(request: NextRequest) {
     const retailerPhone  = (order.retailer  as { phone?: string } | null)?.phone
     const distributorPhone = (order.distributor as { phone?: string } | null)?.phone
 
-    type ItemRow = { quantity: number; product?: { name: string } | null }
+    type ItemRow = { quantity: number; product?: { name: string }[] | null }
     const itemsSummary = ((order.items ?? []) as ItemRow[])
-      .map(i => `${i.product?.name ?? '상품'} x${i.quantity}`)
+      .map(i => `${i.product?.[0]?.name ?? '상품'} x${i.quantity}`)
       .join('\n')
 
     // 복수 송장은 첫 번째만 SMS에 표시
