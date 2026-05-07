@@ -8,24 +8,27 @@ import Link from 'next/link'
 
 function toDateStr(d: Date) { return d.toISOString().slice(0, 10) }
 
-function getPreset(preset: 'today' | 'month' | '3months') {
-  const today = new Date()
-  const to = toDateStr(today)
-  if (preset === 'today') return { from: to, to }
-  if (preset === 'month') return { from: toDateStr(new Date(today.getFullYear(), today.getMonth(), 1)), to }
-  const d = new Date(today); d.setMonth(d.getMonth() - 3)
-  return { from: toDateStr(d), to }
-}
-
 type ShippedOrder = { hq_total: number | null; shipped_at: string | null }
+
+function sumOrders(orders: ShippedOrder[], from: string, to: string) {
+  return orders
+    .filter(o => o.shipped_at && o.shipped_at >= from && o.shipped_at <= to)
+    .reduce((s, o) => s + (o.hq_total || 0), 0)
+}
 
 export default function HQDashboard() {
   const { profile } = useAuth()
   const supabase = useMemo(() => createClient(), [])
 
-  const defaults = getPreset('3months')
-  const [dateFrom, setDateFrom] = useState(defaults.from)
-  const [dateTo,   setDateTo]   = useState(defaults.to)
+  const now = new Date()
+  const todayStr    = toDateStr(now)
+  const monthStart  = toDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
+
+  // 기간 조회 기본값: 최근 3개월
+  const defaultFrom = toDateStr(new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()))
+  const [dateFrom, setDateFrom] = useState(defaultFrom)
+  const [dateTo,   setDateTo]   = useState(todayStr)
+  const [applied,  setApplied]  = useState({ from: defaultFrom, to: todayStr })
 
   const [topStats, setTopStats] = useState({
     totalOrders: 0, pendingShipment: 0,
@@ -34,7 +37,6 @@ export default function HQDashboard() {
   const [allOrders, setAllOrders] = useState<ShippedOrder[]>([])
   const [loading, setLoading] = useState(true)
 
-  // 상단 카드 + 전체 출고 주문 로드 (한 번만)
   useEffect(() => {
     if (!profile) return
     const load = async () => {
@@ -73,27 +75,30 @@ export default function HQDashboard() {
     load()
   }, [profile, supabase])
 
-  // 날짜 필터 계산 (client-side)
-  const now = new Date()
-  const todayStart  = toDateStr(now)
-  const monthStart  = toDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
-  const rangeFrom   = dateFrom
-  const rangeTo     = dateTo + 'T23:59:59'
+  // 계산
+  const monthSales  = sumOrders(allOrders, monthStart, todayStr + 'T23:59:59')
+  const todaySales  = sumOrders(allOrders, todayStr, todayStr + 'T23:59:59')
+  const periodSales = sumOrders(allOrders, applied.from, applied.to + 'T23:59:59')
 
-  const periodSales = allOrders
-    .filter(o => o.shipped_at && o.shipped_at >= rangeFrom && o.shipped_at <= rangeTo)
-    .reduce((s, o) => s + (o.hq_total || 0), 0)
-  const monthSales = allOrders
-    .filter(o => o.shipped_at && o.shipped_at >= monthStart)
-    .reduce((s, o) => s + (o.hq_total || 0), 0)
-  const todaySales = allOrders
-    .filter(o => o.shipped_at && o.shipped_at >= todayStart)
-    .reduce((s, o) => s + (o.hq_total || 0), 0)
+  // 최근 3개월 (이번달 제외, 역순)
+  const recent3Months = [1, 2, 3].map(i => {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const from = toDateStr(d)
+    const to   = toDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)) + 'T23:59:59'
+    return {
+      label: `${d.getMonth() + 1}월`,
+      sales: sumOrders(allOrders, from, to),
+    }
+  })
 
   const applyPreset = useCallback((preset: 'today' | 'month' | '3months') => {
-    const { from, to } = getPreset(preset)
+    const to = todayStr
+    let from = todayStr
+    if (preset === 'month')    from = monthStart
+    if (preset === '3months')  from = defaultFrom
     setDateFrom(from); setDateTo(to)
-  }, [])
+    setApplied({ from, to })
+  }, [todayStr, monthStart, defaultFrom])
 
   return (
     <div>
@@ -104,80 +109,88 @@ export default function HQDashboard() {
 
       {/* 상단 운영 카드 */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">전체 주문</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1.5">{topStats.totalOrders}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-orange-200 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">출고 대기</p>
-          <p className="text-2xl font-bold text-orange-600 mt-1.5">{topStats.pendingShipment}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">등록 상품</p>
-          <p className="text-2xl font-bold text-blue-600 mt-1.5">{topStats.products}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">총판 수</p>
-          <p className="text-2xl font-bold text-green-600 mt-1.5">{topStats.distributors}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-emerald-200 p-4 sm:p-5">
-          <p className="text-xs text-gray-500">정상 소매점</p>
-          <p className="text-2xl font-bold text-emerald-600 mt-1.5">{topStats.activeRetailers}</p>
-        </div>
+        {[
+          { label: '전체 주문',  value: topStats.totalOrders,    color: 'text-gray-900',   border: 'border-gray-200' },
+          { label: '출고 대기',  value: topStats.pendingShipment, color: 'text-orange-600', border: 'border-orange-200' },
+          { label: '등록 상품',  value: topStats.products,       color: 'text-blue-600',   border: 'border-gray-200' },
+          { label: '총판 수',    value: topStats.distributors,   color: 'text-green-600',  border: 'border-gray-200' },
+          { label: '정상 소매점', value: topStats.activeRetailers, color: 'text-emerald-600', border: 'border-emerald-200' },
+        ].map(c => (
+          <div key={c.label} className={`bg-white rounded-xl border ${c.border} p-4 sm:p-5`}>
+            <p className="text-xs text-gray-500">{c.label}</p>
+            <p className={`text-2xl font-bold mt-1.5 ${c.color}`}>{c.value}</p>
+          </div>
+        ))}
       </div>
 
       {/* 매출현황 */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-5 mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-          <h2 className="text-sm font-semibold text-gray-700 shrink-0">매출현황
-            <span className="ml-1.5 text-xs font-normal text-gray-400">(본사 공급가 · 출고완료 기준)</span>
-          </h2>
-          {/* 날짜 선택 */}
-          <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-            <div className="flex items-center gap-1.5 text-sm">
-              <input
-                type="date" value={dateFrom}
-                onChange={e => setDateFrom(e.target.value)}
-                className="px-2 py-1 border border-gray-300 rounded-lg text-xs text-gray-700"
-              />
+      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6 space-y-4">
+        <h2 className="text-sm font-semibold text-gray-700">
+          매출현황
+          <span className="ml-1.5 text-xs font-normal text-gray-400">(본사 공급가 · 출고완료 기준)</span>
+        </h2>
+
+        {/* 1행: 당월 + 당일 */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-xl border border-violet-200 bg-violet-50 p-4">
+            <p className="text-xs text-violet-500 font-medium mb-1">
+              당월 매출
+              <span className="ml-1 text-gray-400 font-normal">({now.getMonth() + 1}월)</span>
+            </p>
+            <p className="text-xl sm:text-2xl font-bold text-violet-700">
+              {loading ? '-' : formatKRW(monthSales)}
+            </p>
+          </div>
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+            <p className="text-xs text-rose-500 font-medium mb-1">당일 매출 <span className="text-gray-400 font-normal">(오늘)</span></p>
+            <p className="text-xl sm:text-2xl font-bold text-rose-700">
+              {loading ? '-' : formatKRW(todaySales)}
+            </p>
+          </div>
+        </div>
+
+        {/* 2행: 기간 조회 */}
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+          <div className="flex flex-wrap items-center gap-2 mb-3">
+            <span className="text-xs font-medium text-blue-600">기간 조회</span>
+            <div className="flex items-center gap-1.5">
+              <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                className="px-2 py-1 border border-blue-200 rounded-lg text-xs text-gray-700 bg-white" />
               <span className="text-gray-400 text-xs">~</span>
-              <input
-                type="date" value={dateTo}
-                onChange={e => setDateTo(e.target.value)}
-                className="px-2 py-1 border border-gray-300 rounded-lg text-xs text-gray-700"
-              />
+              <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                className="px-2 py-1 border border-blue-200 rounded-lg text-xs text-gray-700 bg-white" />
+              <button onClick={() => setApplied({ from: dateFrom, to: dateTo })}
+                className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700">
+                조회
+              </button>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 ml-auto">
               {(['today', 'month', '3months'] as const).map(p => (
                 <button key={p} onClick={() => applyPreset(p)}
-                  className="px-2 py-1 text-xs rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:border-gray-300">
+                  className="px-2 py-1 text-xs rounded-lg border border-blue-200 bg-white text-blue-600 hover:bg-blue-100">
                   {p === 'today' ? '오늘' : p === 'month' ? '이번달' : '최근3개월'}
                 </button>
               ))}
             </div>
           </div>
+          <p className="text-xs text-blue-400 mb-1">{applied.from} ~ {applied.to}</p>
+          <p className="text-xl sm:text-2xl font-bold text-blue-700">
+            {loading ? '-' : formatKRW(periodSales)}
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
-            <p className="text-xs text-blue-500 font-medium mb-1">
-              기간 매출 <span className="text-gray-400 font-normal">({dateFrom} ~ {dateTo})</span>
-            </p>
-            <p className="text-xl font-bold text-blue-700">
-              {loading ? '-' : formatKRW(periodSales)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-violet-200 bg-violet-50 p-4">
-            <p className="text-xs text-violet-500 font-medium mb-1">당월 매출</p>
-            <p className="text-xl font-bold text-violet-700">
-              {loading ? '-' : formatKRW(monthSales)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
-            <p className="text-xs text-rose-500 font-medium mb-1">당일 매출</p>
-            <p className="text-xl font-bold text-rose-700">
-              {loading ? '-' : formatKRW(todaySales)}
-            </p>
+        {/* 3행: 최근 3개월 개별 */}
+        <div>
+          <p className="text-xs text-gray-400 mb-2">최근 3개월</p>
+          <div className="grid grid-cols-3 gap-3">
+            {recent3Months.map(m => (
+              <div key={m.label} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                <p className="text-xs text-gray-500 font-medium mb-1">{m.label}</p>
+                <p className="text-base sm:text-lg font-bold text-gray-700">
+                  {loading ? '-' : formatKRW(m.sales)}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </div>

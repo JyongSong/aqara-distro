@@ -56,6 +56,16 @@ export async function GET(req: NextRequest) {
     .filter(o => o.shipped_at && o.shipped_at >= todayStart)
     .reduce((s, o) => s + (o.hq_total || 0), 0)
 
+  const recent3Months = [1, 2, 3].map(i => {
+    const d    = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const from = toDateStr(d)
+    const to   = toDateStr(new Date(d.getFullYear(), d.getMonth() + 1, 0)) + 'T23:59:59'
+    const sales = orders
+      .filter(o => o.shipped_at && o.shipped_at >= from && o.shipped_at <= to)
+      .reduce((s, o) => s + (o.hq_total || 0), 0)
+    return { label: `${d.getMonth() + 1}월`, sales }
+  })
+
   return NextResponse.json({
     totalOrders:    totalOrders    || 0,
     pendingShipment:pendingShipment|| 0,
@@ -67,6 +77,7 @@ export async function GET(req: NextRequest) {
     todaySales,
     dateFrom,
     dateTo,
+    recent3Months,
     updatedAt: now.toISOString(),
   })
 }
