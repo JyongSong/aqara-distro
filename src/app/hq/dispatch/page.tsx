@@ -8,6 +8,7 @@ type DispatchAssignment = {
   address:         string | null
   order_numbers:   string | null
   memo:            string | null
+  due_date:        string | null
   business_number: string
   branch_name:     string
   item_code:       string | null
@@ -21,18 +22,25 @@ function todayKST(): string {
 }
 
 const stripDash = (d: string) => d.replace(/-/g, '')
+const formatYmd  = (yyyymmdd: string | null | undefined) =>
+  yyyymmdd ? `${yyyymmdd.slice(0, 4)}-${yyyymmdd.slice(4, 6)}-${yyyymmdd.slice(6, 8)}` : ''
 
 export default function HQDispatchPage() {
-  const [dueDate, setDueDate] = useState(todayKST())
+  const today = todayKST()
+  const [dateFrom, setDateFrom] = useState(today)
+  const [dateTo,   setDateTo]   = useState(today)
   const [rows,    setRows]    = useState<DispatchAssignment[]>([])
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState<string | null>(null)
   const [searched, setSearched] = useState(false)
 
+  const isValidRange = dateFrom && dateTo && dateFrom <= dateTo
+
   const fetchData = async () => {
     setLoading(true); setError(null)
     try {
-      const res = await fetch(`/api/hq/dispatch?dueDate=${stripDash(dueDate)}`)
+      const qs = `from=${stripDash(dateFrom)}&to=${stripDash(dateTo)}`
+      const res = await fetch(`/api/hq/dispatch?${qs}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'ERP 조회 실패')
       setRows(json.data)
@@ -45,7 +53,8 @@ export default function HQDispatchPage() {
   }
 
   const downloadExcel = () => {
-    window.location.href = `/api/hq/dispatch/export?dueDate=${stripDash(dueDate)}`
+    const qs = `from=${stripDash(dateFrom)}&to=${stripDash(dateTo)}`
+    window.location.href = `/api/hq/dispatch/export?${qs}`
   }
 
   // 지점별 배정 통계
@@ -68,17 +77,29 @@ export default function HQDispatchPage() {
       {/* 조회 조건 */}
       <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap items-end gap-3">
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">납기일자</label>
+          <label className="block text-xs font-medium text-gray-500 mb-1">납기일자 (시작)</label>
           <input
             type="date"
-            value={dueDate}
-            onChange={e => setDueDate(e.target.value)}
+            value={dateFrom}
+            max={dateTo}
+            onChange={e => setDateFrom(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
+          />
+        </div>
+        <div className="text-gray-400 pb-2">~</div>
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">납기일자 (종료)</label>
+          <input
+            type="date"
+            value={dateTo}
+            min={dateFrom}
+            onChange={e => setDateTo(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900"
           />
         </div>
         <button
           onClick={fetchData}
-          disabled={loading || !dueDate}
+          disabled={loading || !isValidRange}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? '조회 중…' : '조회'}
@@ -122,11 +143,11 @@ export default function HQDispatchPage() {
       <div className="bg-white rounded-xl border border-gray-200">
         {!searched ? (
           <div className="px-6 py-12 text-center text-gray-400 text-sm">
-            납기일자를 선택하고 조회 버튼을 눌러주세요.
+            납기일자 범위를 선택하고 조회 버튼을 눌러주세요.
           </div>
         ) : rows.length === 0 ? (
           <div className="px-6 py-12 text-center text-gray-400 text-sm">
-            해당 일자에 기사배정 대상 주문이 없습니다.
+            해당 기간에 기사배정 대상 주문이 없습니다.
           </div>
         ) : (
           <>
@@ -135,6 +156,7 @@ export default function HQDispatchPage() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-gray-100 text-xs font-medium text-gray-500">
+                    <th className="px-3 py-3 text-left">납기일자</th>
                     <th className="px-3 py-3 text-left">지점</th>
                     <th className="px-3 py-3 text-left">고객명</th>
                     <th className="px-3 py-3 text-left">연락처</th>
@@ -147,6 +169,9 @@ export default function HQDispatchPage() {
                 <tbody>
                   {rows.map((r, i) => (
                     <tr key={i} className="border-b border-gray-50 hover:bg-gray-50 text-sm">
+                      <td className="px-3 py-3 text-gray-500 text-xs whitespace-nowrap">
+                        {formatYmd(r.due_date)}
+                      </td>
                       <td className="px-3 py-3 whitespace-nowrap">
                         <div className="text-gray-900 font-medium">{r.branch_name}</div>
                         <div className="text-gray-400 text-xs font-mono">{r.business_number}</div>
@@ -196,7 +221,10 @@ export default function HQDispatchPage() {
                       <p className="text-sm font-semibold text-gray-900">{r.customer_name}</p>
                       <p className="text-xs text-blue-700">📍 {r.branch_name}</p>
                     </div>
-                    <span className="text-xs font-mono text-gray-500">{r.phone}</span>
+                    <div className="text-right">
+                      <span className="text-xs font-mono text-gray-500 block">{r.phone}</span>
+                      <span className="text-xs text-gray-400">{formatYmd(r.due_date)}</span>
+                    </div>
                   </div>
                   {r.address && (
                     <p className="text-xs text-gray-500 mb-1">🏠 {r.address}</p>

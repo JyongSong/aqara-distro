@@ -11,6 +11,7 @@ export type DispatchRow = {
   address:       string | null
   order_numbers: string | null
   memo:          string | null
+  due_date:      string | null    // YYYYMMDD (group 내 가장 빠른 날짜)
 }
 
 export type DispatchAssignment = DispatchRow & {
@@ -186,21 +187,24 @@ export function determineItem(memo: string): { itemCode: string | null; itemName
 
 /**
  * 기사배정 대상 주문 조회 (ERP)
- * - 납기일자 (DT_DUEDATE) 매칭
+ * - 납기일자 (DT_DUEDATE) 범위 매칭
  * - 해당 주문(NO_SO)에 용역 품목(00010 출장비 / 00012% 도어락 설치비) 포함
  * - 전화번호 기준 그룹핑 (한 사람 = 한 행)
+ * @param dueDateFrom YYYYMMDD (포함)
+ * @param dueDateTo   YYYYMMDD (포함)
  */
-export async function fetchDispatchRows(dueDate: string): Promise<DispatchRow[]> {
+export async function fetchDispatchRows(dueDateFrom: string, dueDateTo: string): Promise<DispatchRow[]> {
   const pool = await getErpPool()
   const result = await pool.request()
-    .input('dueDate', sql.VarChar(8), dueDate)
+    .input('dueDateFrom', sql.VarChar(8), dueDateFrom)
+    .input('dueDateTo',   sql.VarChar(8), dueDateTo)
     .query(`
       WITH eligible AS (
         SELECT DISTINCT NO_SO, CD_COMPANY
         FROM NEOE.SA_SOL
         WHERE CD_COMPANY = '1000'
           AND NO_HST     = 0
-          AND DT_DUEDATE = @dueDate
+          AND DT_DUEDATE BETWEEN @dueDateFrom AND @dueDateTo
           AND (CD_ITEM = '00010' OR CD_ITEM LIKE '00012%')
       ),
       lines AS (
@@ -210,6 +214,7 @@ export async function fetchDispatchRows(dueDate: string): Promise<DispatchRow[]>
           LTRIM(RTRIM(ISNULL(I.NM_ITEM, SOL.CD_ITEM))) AS NM_ITEM,
           CAST(SOL.QT_SO AS INT) AS QT,
           SOL.NO_ORDER_ON,
+          SOL.DT_DUEDATE AS due_date,
           COALESCE(
             NULLIF(LTRIM(RTRIM(CZ.NO_HP1)),  ''),
             NULLIF(LTRIM(RTRIM(CZ.NO_HP2)),  ''),
@@ -233,9 +238,10 @@ export async function fetchDispatchRows(dueDate: string): Promise<DispatchRow[]>
           ON I.CD_ITEM = SOL.CD_ITEM AND I.CD_COMPANY = '1000'
       )
       SELECT
-        MAX(nm)   AS customer_name,
-        l1.phone  AS phone,
-        MAX(addr) AS address,
+        MAX(nm)        AS customer_name,
+        l1.phone       AS phone,
+        MAX(addr)      AS address,
+        MIN(due_date)  AS due_date,
         STUFF((
           SELECT DISTINCT N', ' + l2.NO_ORDER_ON
           FROM lines l2
@@ -251,7 +257,7 @@ export async function fetchDispatchRows(dueDate: string): Promise<DispatchRow[]>
       FROM lines l1
       WHERE l1.phone IS NOT NULL
       GROUP BY l1.phone
-      ORDER BY customer_name
+      ORDER BY MIN(due_date), customer_name
     `)
 
   return result.recordset as DispatchRow[]
