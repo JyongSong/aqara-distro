@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchDispatchRows } from '@/lib/dispatch'
+import { fetchDispatchRows, assignDispatch } from '@/lib/dispatch'
 
 export async function GET(req: NextRequest) {
   const dueDate = new URL(req.url).searchParams.get('dueDate')
@@ -8,7 +8,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const data = await fetchDispatchRows(dueDate)
+    const rows = await fetchDispatchRows(dueDate)
+    const data = assignDispatch(rows)
     return NextResponse.json({ data })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'ERP 연결 실패'
