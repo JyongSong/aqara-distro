@@ -200,12 +200,22 @@ export async function fetchDispatchRows(dueDateFrom: string, dueDateTo: string):
     .input('dueDateTo',   sql.VarChar(8), dueDateTo)
     .query(`
       WITH eligible AS (
-        SELECT DISTINCT NO_SO, CD_COMPANY
-        FROM NEOE.SA_SOL
-        WHERE CD_COMPANY = '1000'
-          AND NO_HST     = 0
-          AND DT_DUEDATE BETWEEN @dueDateFrom AND @dueDateTo
-          AND (CD_ITEM = '00010' OR CD_ITEM LIKE '00012%')
+        SELECT DISTINCT SOL.NO_SO, SOL.CD_COMPANY
+        FROM NEOE.SA_SOL SOL
+        WHERE SOL.CD_COMPANY = '1000'
+          AND SOL.NO_HST     = 0
+          AND SOL.DT_DUEDATE BETWEEN @dueDateFrom AND @dueDateTo
+          AND (SOL.CD_ITEM = '00010' OR SOL.CD_ITEM LIKE '00012%')
+          -- 출하의뢰가 1건 이상 존재하고, 모든 SA_GIRL 라인이 QT_GIR = QT_GI 인 주문만
+          AND EXISTS (
+            SELECT 1 FROM NEOE.SA_GIRL G
+            WHERE G.NO_SO = SOL.NO_SO AND G.CD_COMPANY = SOL.CD_COMPANY
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM NEOE.SA_GIRL G
+            WHERE G.NO_SO = SOL.NO_SO AND G.CD_COMPANY = SOL.CD_COMPANY
+              AND G.QT_GIR <> G.QT_GI
+          )
       ),
       lines AS (
         SELECT
