@@ -255,7 +255,10 @@ export async function fetchDispatchRows(dueDateFrom: string, dueDateTo: string):
         STUFF((
           SELECT DISTINCT N', ' + l2.NO_ORDER_ON
           FROM lines l2
-          WHERE l2.phone = l1.phone AND l2.NO_ORDER_ON IS NOT NULL
+          WHERE l2.phone = l1.phone
+            AND l2.NO_ORDER_ON IS NOT NULL
+            -- 용역 라인이 속한 NO_ORDER_ON 만 (일반 상품의 NO_ORDER_ON 제외)
+            AND (l2.CD_ITEM = '00010' OR l2.CD_ITEM LIKE '00012%')
           FOR XML PATH(''), TYPE
         ).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS order_numbers,
         STUFF((
