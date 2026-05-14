@@ -226,10 +226,10 @@ export async function fetchDispatchRows(dueDateFrom: string, dueDateTo: string):
           SOL.NO_ORDER_ON,
           SOL.DT_DUEDATE AS due_date,
           COALESCE(
-            NULLIF(LTRIM(RTRIM(CZ.NO_HP1)),  ''),
-            NULLIF(LTRIM(RTRIM(CZ.NO_HP2)),  ''),
-            NULLIF(LTRIM(RTRIM(CZ.NO_TEL1)), ''),
-            NULLIF(LTRIM(RTRIM(CZ.NO_TEL2)), '')
+            NULLIF(LTRIM(RTRIM(CZ.NO_HP2)),  ''),    -- 수령인 휴대폰 (우선)
+            NULLIF(LTRIM(RTRIM(CZ.NO_HP1)),  ''),    -- 구매자 휴대폰 (대체)
+            NULLIF(LTRIM(RTRIM(CZ.NO_TEL2)), ''),    -- 수령인 일반전화
+            NULLIF(LTRIM(RTRIM(CZ.NO_TEL1)), '')     -- 구매자 일반전화
           ) AS phone,
           COALESCE(
             NULLIF(LTRIM(RTRIM(CZ.NM_RECEIVE)), ''),
