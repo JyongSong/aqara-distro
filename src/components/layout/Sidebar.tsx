@@ -36,6 +36,7 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
     { label: '대시보드', href: '/hq/dashboard', icon: '📊' },
     { label: '주문 관리', href: '/hq/orders', icon: '📋' },
     { label: '출하현황', href: '/hq/shipments', icon: '🚚' },
+    { label: '실적 분석', href: '/hq/performance', icon: '📈' },
     { label: '기사배정', href: '/hq/dispatch', icon: '🔧' },
     { label: '상품 관리', href: '/hq/products', icon: '📦' },
     { label: '단가 관리', href: '/hq/pricing', icon: '💰' },
