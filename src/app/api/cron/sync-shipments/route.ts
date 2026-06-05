@@ -7,7 +7,7 @@ const APP_URL = 'https://aqara-distro.vercel.app'
 const CARRIER  = '한진택배'
 
 // ERP에 송장번호가 생기면 자동으로 SHIPPED 처리
-const STATUSES_TO_CHECK = ['APPROVED', 'HQ_RECEIVED', 'PREPARING']
+const STATUSES_TO_CHECK = ['APPROVED', 'HQ_RECEIVED', 'PREPARING', 'SHIPPED']
 
 export async function GET(request: NextRequest) {
   // Vercel Cron은 Authorization: Bearer <CRON_SECRET> 헤더를 자동 추가
@@ -41,18 +41,34 @@ export async function GET(request: NextRequest) {
     const trackingNo = await getErpTrackingNumber(order.order_number)
     if (!trackingNo) continue
 
+    const wasAlreadyShipped = order.status === 'SHIPPED'
+
     // 상태 업데이트
+    const updatePayload: Record<string, unknown> = {
+      tracking_number: trackingNo,
+    }
+    if (!wasAlreadyShipped) {
+      updatePayload.status = 'SHIPPED'
+      updatePayload.shipped_at = new Date().toISOString()
+    }
+
     const { error: updateErr } = await supabase
       .from('orders')
-      .update({
-        status:          'SHIPPED',
-        tracking_number: trackingNo,
-        shipped_at:      new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq('id', order.id)
 
     if (updateErr) {
       console.error(`[cron] 업데이트 실패 ${order.order_number}:`, updateErr)
+      continue
+    }
+
+    // 복수 송장은 첫 번째만 SMS에 표시
+    const firstTracking = trackingNo.split('\n')[0]
+
+    // 이미 SHIPPED 상태였던 주문은 SMS를 중복 발송하지 않음
+    if (wasAlreadyShipped) {
+      synced.push({ order_number: order.order_number, tracking_no: firstTracking })
+      console.log(`[cron] SHIPPED 송장번호 업데이트 완료 (SMS 미발송): ${order.order_number}`)
       continue
     }
 
@@ -68,8 +84,6 @@ export async function GET(request: NextRequest) {
       .map(i => `${i.product?.[0]?.name ?? '상품'} x${i.quantity}`)
       .join('\n')
 
-    // 복수 송장은 첫 번째만 SMS에 표시
-    const firstTracking = trackingNo.split('\n')[0]
     const trackingLine  = `송장번호: ${firstTracking}\n택배사: ${CARRIER}\n`
 
     await Promise.all([
