@@ -130,7 +130,7 @@ export default function HQPerformance() {
 
     orders.forEach(o => {
       totalHqAmount += o.hq_total || 0
-      totalRetailerAmount += o.retailer_total || 0
+      totalRetailerAmount += o.hq_total || 0 // 零售商金额也按照 HQ 给总销商的价格计算
       if (o.distributor_id) activeDistributors.add(o.distributor_id)
       if (o.retailer_id) activeRetailers.add(o.retailer_id)
     })
@@ -189,7 +189,7 @@ export default function HQPerformance() {
           orderCount: 0
         }
       }
-      map[id].totalAmount += o.retailer_total || 0
+      map[id].totalAmount += o.hq_total || 0 // 零售商金额也按照 HQ 给总销商的价格 (hq_total) 计算
       map[id].orderCount += 1
     })
 
@@ -409,7 +409,7 @@ export default function HQPerformance() {
           </p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <p className="text-xs text-gray-500 font-medium">소매 총 주문액 (소매 주문 기준)</p>
+          <p className="text-xs text-gray-500 font-medium">소매 총 주문액 (본사 공급가 기준)</p>
           <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
             {loading ? '-' : formatKRW(stats.totalRetailerAmount)}
           </p>
@@ -458,7 +458,7 @@ export default function HQPerformance() {
                   : 'border-transparent text-gray-500 hover:text-gray-800'
               }`}
             >
-              소매점 실적 순위 (소매 주문 기준)
+              소매점 실적 순위 (본사 공급 기준)
             </button>
           </div>
 
