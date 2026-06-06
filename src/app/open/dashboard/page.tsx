@@ -82,6 +82,11 @@ export default function OpenDashboardPage() {
   const [stats,    setStats]    = useState<Stats | null>(null)
   const [loading,  setLoading]  = useState(true)
 
+  // 실적 분석 전용 기간 조회 상태 (매출현황과 분리)
+  const [perfDateFrom, setPerfDateFrom] = useState(defaults.from)
+  const [perfDateTo,   setPerfDateTo]   = useState(defaults.to)
+  const [perfApplied,  setPerfApplied]  = useState({ from: defaults.from, to: defaults.to })
+
   // 실적 분석 관련 상태
   const [performanceTab, setPerformanceTab] = useState<'retailer' | 'distributor'>('retailer')
   const [selectedMerchantId, setSelectedMerchantId] = useState<string | null>(null)
@@ -90,7 +95,7 @@ export default function OpenDashboardPage() {
 
   const fetchStats = useCallback(async (from: string, to: string) => {
     setLoading(true)
-    setSelectedMerchantId(null) // 时间范围改变重置选择的商家
+    setSelectedMerchantId(null) // 时间范围改变重置选择의 商家
     try {
       const res = await fetch(`/api/open/dashboard?from=${from}&to=${to}`)
       const data = await res.json()
@@ -109,6 +114,14 @@ export default function OpenDashboardPage() {
     fetchStats(from, to)
   }
 
+  // 실적 분석용 전용 단축 기능
+  const applyPerfPreset = (preset: 'today' | 'month' | '1month') => {
+    const { from, to } = getPreset(preset)
+    setPerfDateFrom(from); setPerfDateTo(to)
+    setPerfApplied({ from, to })
+    setSelectedMerchantId(null)
+  }
+
   const handleSearch = () => {
     setApplied({ from: dateFrom, to: dateTo })
     fetchStats(dateFrom, dateTo)
@@ -125,12 +138,12 @@ export default function OpenDashboardPage() {
     return { label, sales: entry?.sales ?? 0 }
   })
 
-  // 2. 실적 분석 데이터 필터링 (이미 API단에서 기간 조회한 결과이지만, 한번 더 클라이언트 기간 검증)
+  // 2. 실적 분석 데이터 필터링 (전용 필터 perfApplied 사용)
   const filteredOrders = useMemo(() => {
     if (!stats?.orders) return []
-    const toEnd = applied.to + 'T23:59:59'
-    return stats.orders.filter(o => o.shipped_at && o.shipped_at >= applied.from && o.shipped_at <= toEnd)
-  }, [stats, applied])
+    const toEnd = perfApplied.to + 'T23:59:59'
+    return stats.orders.filter(o => o.shipped_at && o.shipped_at >= perfApplied.from && o.shipped_at <= toEnd)
+  }, [stats, perfApplied])
 
   // 3. 소매점 실적 순위 (hq_total 기준)
   const retailerRankings = useMemo<RankingItem[]>(() => {
@@ -334,9 +347,32 @@ export default function OpenDashboardPage() {
 
           {/* 3. 실적 분석 (매출현황 아래에 새로 추가된 섹션) */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-              <h2 className="text-base font-bold text-gray-900">📈 실적 분석 (조회기간 및 본사 공급가 기준)</h2>
-              <span className="text-xs text-gray-400 font-medium">{applied.from} ~ {applied.to}</span>
+            <div className="flex flex-col md:flex-row md:items-center justify-between pb-2 border-b border-gray-200 gap-2">
+              <h2 className="text-base font-bold text-gray-900">📈 실적 분석 (본사 공급가 기준)</h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1">
+                  <input type="date" value={perfDateFrom} onChange={e => setPerfDateFrom(e.target.value)}
+                    className="px-2 py-1 border border-gray-200 rounded-lg text-xs text-gray-700 bg-white focus:outline-none" />
+                  <span className="text-gray-400 text-xs">~</span>
+                  <input type="date" value={perfDateTo} onChange={e => setPerfDateTo(e.target.value)}
+                    className="px-2 py-1 border border-gray-200 rounded-lg text-xs text-gray-700 bg-white focus:outline-none" />
+                  <button onClick={() => {
+                    setPerfApplied({ from: perfDateFrom, to: perfDateTo })
+                    setSelectedMerchantId(null)
+                  }}
+                    className="px-2.5 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">
+                    조회
+                  </button>
+                </div>
+                <div className="flex gap-1">
+                  {(['today', 'month', '1month'] as const).map(p => (
+                    <button key={p} onClick={() => applyPerfPreset(p)}
+                      className="px-2 py-1 text-xs rounded-lg border border-gray-200 bg-white text-blue-600 hover:bg-gray-100 transition-colors">
+                      {p === 'today' ? '오늘' : p === 'month' ? '이번달' : '최근1개월'}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

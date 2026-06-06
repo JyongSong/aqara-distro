@@ -61,7 +61,7 @@ export default function HQPerformance() {
   const now = new Date()
   const todayStr = toDateStr(now)
   const monthStart = toDateStr(new Date(now.getFullYear(), now.getMonth(), 1))
-  const defaultFrom = toDateStr(new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()))
+  const defaultFrom = toDateStr(new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())) // 默认设置为最近 1 个月
 
   // 状态定义
   const [dateFrom, setDateFrom] = useState(defaultFrom)

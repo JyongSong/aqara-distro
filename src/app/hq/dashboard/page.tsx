@@ -68,6 +68,11 @@ export default function HQDashboard() {
   const [dateTo,   setDateTo]   = useState(todayStr)
   const [applied,  setApplied]  = useState({ from: defaultFrom, to: todayStr })
 
+  // 실적 분석 전용 기간 조회 상태 (매출현황과 분리)
+  const [perfDateFrom, setPerfDateFrom] = useState(defaultFrom)
+  const [perfDateTo,   setPerfDateTo]   = useState(todayStr)
+  const [perfApplied,  setPerfApplied]  = useState({ from: defaultFrom, to: todayStr })
+
   const [topStats, setTopStats] = useState({
     totalOrders: 0, pendingShipment: 0, activeRetailers: 0,
   })
@@ -132,11 +137,11 @@ export default function HQDashboard() {
     }
   })
 
-  // 실적 분석 기간 필터링 적용된 주문 데이터
+  // 실적 분석 기간 필터링 적용된 주문 데이터 (전용 필터 perfApplied 사용)
   const filteredOrders = useMemo(() => {
-    const toEnd = applied.to + 'T23:59:59'
-    return allOrders.filter(o => o.shipped_at && o.shipped_at >= applied.from && o.shipped_at <= toEnd)
-  }, [allOrders, applied])
+    const toEnd = perfApplied.to + 'T23:59:59'
+    return allOrders.filter(o => o.shipped_at && o.shipped_at >= perfApplied.from && o.shipped_at <= toEnd)
+  }, [allOrders, perfApplied])
 
   // 聚合 생성 소매점 실적 순위 (본사 공급가 hq_total 기준)
   const retailerRankings = useMemo<RankingItem[]>(() => {
@@ -254,11 +259,21 @@ export default function HQDashboard() {
     const to = todayStr
     let from = todayStr
     if (preset === 'month')    from = monthStart
-    if (preset === '3months')  from = toDateStr(new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())) // 단축에서 최근 1개월로
+    if (preset === '3months')  from = defaultFrom
     setDateFrom(from); setDateTo(to)
     setApplied({ from, to })
-    setSelectedMerchantId(null) // 시간대 변경 시 상세 내역 닫기
-  }, [todayStr, monthStart, now])
+  }, [todayStr, monthStart, defaultFrom])
+
+  // 실적 분석용 전용 단축 기능
+  const applyPerfPreset = useCallback((preset: 'today' | 'month' | '1month') => {
+    const to = todayStr
+    let from = todayStr
+    if (preset === 'month')   from = monthStart
+    if (preset === '1month')  from = defaultFrom
+    setPerfDateFrom(from); setPerfDateTo(to)
+    setPerfApplied({ from, to })
+    setSelectedMerchantId(null)
+  }, [todayStr, monthStart, defaultFrom])
 
   const handleSearch = () => {
     setApplied({ from: dateFrom, to: dateTo })
@@ -366,9 +381,32 @@ export default function HQDashboard() {
 
       {/* 4. 실적 분석 (매출현황 아래에 새로 추가된 섹션) */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between pb-2 border-b border-gray-200">
-          <h2 className="text-base font-bold text-gray-900">📈 실적 분석 (조회기간 및 본사 공급가 기준)</h2>
-          <span className="text-xs text-gray-400 font-medium">{applied.from} ~ {applied.to}</span>
+        <div className="flex flex-col md:flex-row md:items-center justify-between pb-2 border-b border-gray-200 gap-2">
+          <h2 className="text-base font-bold text-gray-900">📈 실적 분석 (본사 공급가 기준)</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              <input type="date" value={perfDateFrom} onChange={e => setPerfDateFrom(e.target.value)}
+                className="px-2 py-1 border border-gray-200 rounded-lg text-xs text-gray-700 bg-white focus:outline-none" />
+              <span className="text-gray-400 text-xs">~</span>
+              <input type="date" value={perfDateTo} onChange={e => setPerfDateTo(e.target.value)}
+                className="px-2 py-1 border border-gray-200 rounded-lg text-xs text-gray-700 bg-white focus:outline-none" />
+              <button onClick={() => {
+                setPerfApplied({ from: perfDateFrom, to: perfDateTo })
+                setSelectedMerchantId(null)
+              }}
+                className="px-2.5 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors">
+                조회
+              </button>
+            </div>
+            <div className="flex gap-1">
+              {(['today', 'month', '1month'] as const).map(p => (
+                <button key={p} onClick={() => applyPerfPreset(p)}
+                  className="px-2 py-1 text-xs rounded-lg border border-gray-200 bg-white text-blue-600 hover:bg-gray-100 transition-colors">
+                  {p === 'today' ? '오늘' : p === 'month' ? '이번달' : '최근1개월'}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
