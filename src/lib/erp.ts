@@ -51,52 +51,116 @@ export async function getErpTrackingNumber(orderNumber: string): Promise<string 
   try {
     const pool = await getErpPool()
 
-    // 1순위: SA_SOH → SA_GIRL → CZ_PU_INOUT_CONF_PROC (NO_GIR = NO_RCV 직접 연결)
-    const r1 = await pool.request()
+    // 1. Get NO_SO and CD_COMPANY from SA_SOL (partner order number is stored in NO_ORDER_ON)
+    const solResult = await pool.request()
       .input('orderNumber', sql.VarChar(100), orderNumber)
       .query(`
-        SELECT DISTINCT
-          NULLIF(LTRIM(RTRIM(P.NO_SONG)), '') AS no_song,
-          NULLIF(LTRIM(RTRIM(P.DC_RMK)),  '') AS dc_rmk
-        FROM NEOE.SA_SOH SOH
-        JOIN NEOE.SA_GIRL GIRL
-          ON SOH.NO_SO = GIRL.NO_SO AND SOH.CD_COMPANY = GIRL.CD_COMPANY
-        JOIN NEOE.CZ_PU_INOUT_CONF_PROC P
-          ON GIRL.NO_GIR = P.NO_RCV AND GIRL.CD_COMPANY = P.CD_COMPANY
-        WHERE SOH.CD_COMPANY = '1000'
-          AND SOH.NO_HST = 0
-          AND SOH.NO_PO_PARTNER = @orderNumber
-          AND (NULLIF(LTRIM(RTRIM(P.NO_SONG)), '') IS NOT NULL
-            OR NULLIF(LTRIM(RTRIM(P.DC_RMK)),  '') IS NOT NULL)
+        SELECT DISTINCT NO_SO, CD_COMPANY
+        FROM NEOE.SA_SOL
+        WHERE CD_COMPANY = '1000'
+          AND NO_HST = 0
+          AND NO_ORDER_ON = @orderNumber
       `)
 
-    if (r1.recordset.length > 0) {
-      const combined = r1.recordset
-        .map(row => extractTrackingNumbers(row.no_song, row.dc_rmk))
-        .filter(Boolean)
-        .join('\n')
-      const unique = Array.from(new Set(combined.split('\n').filter(Boolean)))
-      if (unique.length > 0) return unique.join('\n')
+    if (solResult.recordset.length === 0) {
+      console.log(`[erp] No matching SA_SOL record found for NO_ORDER_ON = ${orderNumber}`)
+      return null
     }
 
-    // 2순위: CZ_SA_ORDER.NO_SONG
-    const r2 = await pool.request()
-      .input('orderNumber', sql.VarChar(100), orderNumber)
-      .query(`
-        SELECT TOP 1 NULLIF(LTRIM(RTRIM(CZ.NO_SONG)), '') AS tracking_no
-        FROM NEOE.SA_SOH SOH
-        JOIN NEOE.SA_SOL SOL
-          ON SOH.NO_SO = SOL.NO_SO AND SOH.CD_COMPANY = SOL.CD_COMPANY AND SOL.NO_HST = 0
-        LEFT JOIN NEOE.CZ_SA_ORDER CZ
-          ON SOL.NO_SO = CZ.NO_ORDER AND SOL.SEQ_SO = CZ.SEQ_ORDER AND SOL.CD_COMPANY = CZ.CD_COMPANY
-        WHERE SOH.CD_COMPANY = '1000'
-          AND SOH.NO_HST = 0
-          AND SOH.NO_PO_PARTNER = @orderNumber
-          AND NULLIF(LTRIM(RTRIM(CZ.NO_SONG)), '') IS NOT NULL
-      `)
+    const allTrackingNumbers = new Set<string>()
 
-    return r2.recordset[0]?.tracking_no ?? null
-  } catch {
+    for (const sol of solResult.recordset) {
+      const noSo = sol.NO_SO as string | undefined
+      const cdCompany = sol.CD_COMPANY as string | undefined
+      if (!noSo || !cdCompany) continue
+
+      // Priority 1: CZ_PU_INOUT_CONF_PROC via SA_GIRL
+      const girlResult = await pool.request()
+        .input('noSo', sql.VarChar(100), noSo)
+        .input('cdCompany', sql.VarChar(7), cdCompany)
+        .query(`
+          SELECT DISTINCT NO_GIR
+          FROM NEOE.SA_GIRL
+          WHERE CD_COMPANY = @cdCompany
+            AND NO_SO = @noSo
+        `)
+
+      if (girlResult.recordset.length > 0) {
+        const noGirList = girlResult.recordset.map(r => r.NO_GIR).filter(Boolean) as string[]
+        
+        if (noGirList.length > 0) {
+          const request = pool.request()
+          request.input('cdCompany', sql.VarChar(7), cdCompany)
+          
+          const paramNames = noGirList.map((_, i) => `gir_${i}`)
+          paramNames.forEach((name, i) => {
+            request.input(name, sql.VarChar(100), noGirList[i])
+          })
+
+          const queryStr = `
+            SELECT DISTINCT
+              NULLIF(LTRIM(RTRIM(P.NO_SONG)), '') AS no_song,
+              NULLIF(LTRIM(RTRIM(P.DC_RMK)),  '') AS dc_rmk
+            FROM NEOE.CZ_PU_INOUT_CONF_PROC P
+            WHERE P.CD_COMPANY = @cdCompany
+              AND P.NO_RCV IN (${paramNames.map(p => `@${p}`).join(', ')})
+              AND (NULLIF(LTRIM(RTRIM(P.NO_SONG)), '') IS NOT NULL
+                OR NULLIF(LTRIM(RTRIM(P.DC_RMK)),  '') IS NOT NULL)
+          `
+          
+          const procResult = await request.query(queryStr)
+          
+          if (procResult.recordset.length > 0) {
+            procResult.recordset.forEach(row => {
+              const extracted = extractTrackingNumbers(row.no_song, row.dc_rmk)
+              if (extracted) {
+                extracted.split('\n').forEach(num => {
+                  if (num) allTrackingNumbers.add(num)
+                })
+              }
+            })
+          }
+        }
+      }
+
+      // If we found tracking numbers via Priority 1, we don't need to check Priority 2 for this order
+      if (allTrackingNumbers.size > 0) {
+        continue
+      }
+
+      // Priority 2: CZ_SA_ORDER.NO_SONG
+      const r2 = await pool.request()
+        .input('noSo', sql.VarChar(100), noSo)
+        .input('cdCompany', sql.VarChar(7), cdCompany)
+        .query(`
+          SELECT DISTINCT NULLIF(LTRIM(RTRIM(CZ.NO_SONG)), '') AS tracking_no
+          FROM NEOE.CZ_SA_ORDER CZ
+          WHERE CZ.CD_COMPANY = @cdCompany
+            AND CZ.NO_ORDER = @noSo
+            AND NULLIF(LTRIM(RTRIM(CZ.NO_SONG)), '') IS NOT NULL
+        `)
+
+      if (r2.recordset.length > 0) {
+        r2.recordset.forEach(row => {
+          if (row.tracking_no) {
+            row.tracking_no.split('\n').forEach((num: string) => {
+              const cleaned = num.replace(/\D/g, '')
+              if (cleaned.length >= 8) {
+                allTrackingNumbers.add(cleaned)
+              }
+            })
+          }
+        })
+      }
+    }
+
+    if (allTrackingNumbers.size > 0) {
+      return Array.from(allTrackingNumbers).join('\n')
+    }
+
+    return null
+  } catch (error) {
+    console.error(`[erp] Error fetching tracking number for ${orderNumber}:`, error)
     return null
   }
 }
