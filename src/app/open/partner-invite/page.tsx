@@ -837,12 +837,12 @@ export default function PartnerInvitePage() {
               
               <div className="flex flex-col sm:flex-row sm:items-start gap-2 pt-2 border-t border-gray-800">
                 <span className="font-bold text-gray-400 w-24 flex-shrink-0">이메일</span>
-                <span><a href="mailto:partner@aqara.co.kr" className="hover:text-blue-400 hover:underline text-gray-200">partner@aqara.co.kr</a></span>
+                <span><a href="mailto:siyeol@aqara.kr" className="hover:text-blue-400 hover:underline text-gray-200">siyeol@aqara.kr</a></span>
               </div>
               
               <div className="flex flex-col sm:flex-row sm:items-start gap-2 pt-2 border-t border-gray-800">
                 <span className="font-bold text-gray-400 w-24 flex-shrink-0">홈페이지</span>
-                <span><a href="https://www.aqara.co.kr" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 hover:underline text-gray-200">www.aqara.co.kr</a></span>
+                <span><a href="https://aqaralife.shop" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 hover:underline text-gray-200">https://aqaralife.shop</a></span>
               </div>
             </div>
             
