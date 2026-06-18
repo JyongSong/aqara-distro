@@ -41,6 +41,7 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
     { label: '상품 관리', href: '/hq/products', icon: '📦' },
     { label: '단가 관리', href: '/hq/pricing', icon: '💰' },
     { label: '사용자 관리', href: '/hq/users', icon: '👥' },
+    { label: '대리점 지원 현황', href: '/hq/partner-surveys', icon: '📝' },
     { label: '물류 관리', href: '/open/logistics', icon: '🏭', external: true },
     { label: '설치 배정 SMS', href: '/hq/send-assignment-sms', icon: '📨' },
     { label: '계정 설정', href: '/hq/settings', icon: '⚙️' },

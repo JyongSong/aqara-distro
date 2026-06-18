@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Script from 'next/script'
 
@@ -19,8 +19,11 @@ declare global {
   }
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const surveyId = searchParams.get('survey_id')
+
   const [form, setForm] = useState({
     company_name: '',
     contact_name: '',
@@ -35,6 +38,44 @@ export default function RegisterPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [surveyLoading, setSurveyLoading] = useState(false)
+  const [surveyError, setSurveyError] = useState('')
+
+  useEffect(() => {
+    if (surveyId) {
+      fetchSurveyData(surveyId)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [surveyId])
+
+  const fetchSurveyData = async (id: string) => {
+    setSurveyLoading(true)
+    setError('')
+    setSurveyError('')
+    try {
+      const res = await fetch(`/api/open/partner-invite?id=${id}`)
+      const data = await res.json()
+      if (res.ok) {
+        setForm(prev => ({
+          ...prev,
+          company_name: data.business_name || '',
+          contact_name: data.contact_name || '',
+          phone: data.contact_phone || '',
+          zipcode: data.business_zipcode || '',
+          address: data.business_address || '',
+          address_detail: data.business_address_detail || '',
+        }))
+      } else {
+        setSurveyError(data.error || '유효하지 않거나 이미 가입 완료된 전용 가입 링크입니다.')
+        setError(data.error || '유효하지 않거나 이미 가입 완료된 전용 가입 링크입니다.')
+      }
+    } catch (err) {
+      setSurveyError('신청 정보 조회 중 오류가 발생했습니다.')
+      setError('신청 정보 조회 중 오류가 발생했습니다.')
+    } finally {
+      setSurveyLoading(false)
+    }
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
@@ -113,6 +154,7 @@ export default function RegisterPage() {
         post_code: form.zipcode || null,
         address: fullAddress,
         distributor_code: form.distributor_code.trim() || null,
+        survey_id: surveyId || null,
       }),
     })
 
@@ -152,7 +194,9 @@ export default function RegisterPage() {
                   value={form.company_name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  readOnly={!!surveyId}
+                  disabled={!!surveyId}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500"
                   placeholder="예: 홍길동 스마트홈"
                 />
               </div>
@@ -169,7 +213,9 @@ export default function RegisterPage() {
                   value={form.contact_name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  readOnly={!!surveyId}
+                  disabled={!!surveyId}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500"
                   placeholder="예: 홍길동"
                 />
               </div>
@@ -186,7 +232,9 @@ export default function RegisterPage() {
                   value={form.phone}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  readOnly={!!surveyId}
+                  disabled={!!surveyId}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500"
                   placeholder="예: 010-1234-5678"
                 />
               </div>
@@ -227,7 +275,8 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={openPostcode}
-                    className="flex-1 px-4 py-2.5 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
+                    disabled={!!surveyId}
+                    className="flex-1 px-4 py-2.5 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-800 disabled:opacity-50 disabled:bg-gray-400 transition-colors"
                   >
                     우편번호 조회
                   </button>
@@ -249,7 +298,9 @@ export default function RegisterPage() {
                   value={form.address_detail}
                   onChange={handleChange}
                   placeholder="상세 주소 (동, 호수, 층 등)"
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                  readOnly={!!surveyId}
+                  disabled={!!surveyId}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors disabled:bg-gray-100 disabled:text-gray-500"
                 />
               </div>
 
@@ -312,10 +363,10 @@ export default function RegisterPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || surveyLoading || !!surveyError}
                 className="w-full py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mt-2"
               >
-                {loading ? '가입 중...' : '가입하기'}
+                {loading ? '가입 중...' : surveyLoading ? '신청 정보 불러오는 중...' : '가입하기'}
               </button>
             </form>
 
@@ -333,5 +384,17 @@ export default function RegisterPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-sm text-gray-500">로딩 중...</div>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   )
 }
