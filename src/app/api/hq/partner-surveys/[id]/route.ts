@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendSms } from '@/lib/sms'
 
@@ -17,10 +18,11 @@ export async function PATCH(
       return NextResponse.json({ error: '유효한 action(approve, reject)이 필요합니다.' }, { status: 400 })
     }
 
+    const supabase = await createClient()
     const adminClient = createAdminClient()
 
     // 1. 세션 및 HQ 권한 체크
-    const { data: { user } } = await adminClient.auth.getUser()
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: '인증되지 않은 요청입니다.' }, { status: 401 })
     }
