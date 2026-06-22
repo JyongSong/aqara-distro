@@ -7,7 +7,10 @@ import { formatKRW } from '@/lib/utils'
 import { OrderStatus, ORDER_STATUS_LABELS } from '@/lib/types'
 
 function toDateStr(d: Date) {
-  return d.toISOString().slice(0, 10)
+  const Y = d.getFullYear()
+  const M = String(d.getMonth() + 1).padStart(2, '0')
+  const D = String(d.getDate()).padStart(2, '0')
+  return `${Y}-${M}-${D}`
 }
 
 interface RankingItem {

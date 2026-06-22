@@ -60,7 +60,12 @@ interface DetailItem {
   quantity: number
 }
 
-function toDateStr(d: Date) { return d.toISOString().slice(0, 10) }
+function toDateStr(d: Date) {
+  const Y = d.getFullYear()
+  const M = String(d.getMonth() + 1).padStart(2, '0')
+  const D = String(d.getDate()).padStart(2, '0')
+  return `${Y}-${M}-${D}`
+}
 
 function getPreset(preset: 'today' | 'month' | '1month') {
   const today = new Date()

@@ -1,7 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 
-function toDateStr(d: Date) { return d.toISOString().slice(0, 10) }
+function toDateStr(d: Date) {
+  const Y = d.getFullYear()
+  const M = String(d.getMonth() + 1).padStart(2, '0')
+  const D = String(d.getDate()).padStart(2, '0')
+  return `${Y}-${M}-${D}`
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
