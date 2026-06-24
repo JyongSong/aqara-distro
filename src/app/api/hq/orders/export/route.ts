@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 헤더 행
-  const header = ['No.', '주문번호', '상품명', '모델명', '수량', '공급단가(VAT포함)', '주문금액(Vat포함)', '수취인명', '전화(휴대폰)', '우편번호', '주소']
+  const header = ['No.', '주문번호', '상품명', '모델명', '수량', '공급단가(VAT포함)', '주문금액(Vat포함)', '수취인명', '전화(휴대폰)', '우편번호', '주소', '배송메세지']
 
   // 데이터 행
   const rows = items.map((item, i) => {
@@ -64,6 +64,7 @@ export async function GET(request: NextRequest) {
         if (retailer.post_code) return raw  // post_code 분리 저장된 신규 데이터
         return splitPostCode(raw).address   // 기존 데이터: 우편번호 제거
       })(),
+      '총판용',
     ]
   })
 
@@ -82,6 +83,7 @@ export async function GET(request: NextRequest) {
     { wch: 15 },  // 전화
     { wch: 8 },   // 우편번호
     { wch: 40 },  // 주소
+    { wch: 15 },  // 배송메세지
   ]
 
   const wb = XLSX.utils.book_new()

@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
   }
 
   // 헤더 행
-  const header = ['No.', '주문번호', '상품명', '모델명', '수량', '공급단가(VAT포함)', '주문금액(Vat포함)', '수취인명', '전화(휴대폰)', '우편번호', '주소']
+  const header = ['No.', '주문번호', '상품명', '모델명', '수량', '공급단가(VAT포함)', '주문금액(Vat포함)', '수취인명', '전화(휴대폰)', '우편번호', '주소', '배송메세지']
 
   const rows: (string | number)[][] = []
   let rowNo = 1
@@ -73,6 +73,7 @@ export async function GET(request: NextRequest) {
           if (retailer.post_code) return raw
           return splitPostCode(raw).address
         })(),
+        '총판용',
       ])
     }
   }
@@ -91,6 +92,7 @@ export async function GET(request: NextRequest) {
     { wch: 15 },
     { wch: 8 },
     { wch: 40 },
+    { wch: 15 },
   ]
 
   const wb = XLSX.utils.book_new()
