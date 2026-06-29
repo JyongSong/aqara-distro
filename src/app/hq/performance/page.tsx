@@ -31,12 +31,6 @@ interface DetailItem {
 
 // 默认不包含 DRAFT 和 REJECTED 的有效状态
 const DEFAULT_STATUSES: OrderStatus[] = [
-  'SUBMITTED',
-  'QUOTE_SENT',
-  'ORDER_PLACED',
-  'APPROVED',
-  'HQ_RECEIVED',
-  'PREPARING',
   'SHIPPED',
   'DELIVERED',
   'COMPLETED'
@@ -44,14 +38,6 @@ const DEFAULT_STATUSES: OrderStatus[] = [
 
 // 所有的状态列表，用于过滤器
 const ALL_STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
-  { value: 'DRAFT', label: '견적 작성 중' },
-  { value: 'SUBMITTED', label: '견적 요청' },
-  { value: 'QUOTE_SENT', label: '견적 발송' },
-  { value: 'ORDER_PLACED', label: '발주 확정' },
-  { value: 'APPROVED', label: '승인완료' },
-  { value: 'REJECTED', label: '반려' },
-  { value: 'HQ_RECEIVED', label: '본사접수' },
-  { value: 'PREPARING', label: '출고준비' },
   { value: 'SHIPPED', label: '출고완료' },
   { value: 'DELIVERED', label: '수령완료' },
   { value: 'COMPLETED', label: '완료' }
@@ -91,13 +77,14 @@ export default function HQPerformance() {
       const { data, error } = await supabase
         .from('orders')
         .select(`
-          id, status, created_at, hq_total, retailer_total, retailer_id, distributor_id,
+          id, status, created_at, shipped_at, hq_total, retailer_total, retailer_id, distributor_id, fulfillment_type,
           retailer:users_profile!retailer_id(id, company_name, contact_name, phone, address),
           distributor:users_profile!distributor_id(id, company_name, contact_name, phone, address)
         `)
         .in('status', selectedStatuses)
-        .gte('created_at', appliedDates.from + 'T00:00:00')
-        .lte('created_at', appliedDates.to + 'T23:59:59')
+        .neq('fulfillment_type', 'distributor')
+        .gte('shipped_at', appliedDates.from + 'T00:00:00')
+        .lte('shipped_at', appliedDates.to + 'T23:59:59')
 
       if (error) {
         console.error('[performance] 주문 조회 실패:', error)
@@ -133,7 +120,7 @@ export default function HQPerformance() {
 
     orders.forEach(o => {
       totalHqAmount += o.hq_total || 0
-      totalRetailerAmount += o.hq_total || 0 // 零售商金额也按照 HQ 给总销商的价格计算
+      totalRetailerAmount += o.retailer_total || 0 // 소매 공급가 기준 합산
       if (o.distributor_id) activeDistributors.add(o.distributor_id)
       if (o.retailer_id) activeRetailers.add(o.retailer_id)
     })
@@ -192,7 +179,7 @@ export default function HQPerformance() {
           orderCount: 0
         }
       }
-      map[id].totalAmount += o.hq_total || 0 // 零售商金额也按照 HQ 给总销商的价格 (hq_total) 计算
+      map[id].totalAmount += o.retailer_total || 0 // 소매 공급가 기준 합산
       map[id].orderCount += 1
     })
 
@@ -406,13 +393,13 @@ export default function HQPerformance() {
       {/* 2. 상단 요약 지표 카드 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <p className="text-xs text-gray-500 font-medium">본사 총 공급액 (총판 주문 기준)</p>
+          <p className="text-xs text-gray-500 font-medium">본사 총 공급액 (출고 완료 기준)</p>
           <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
             {loading ? '-' : formatKRW(stats.totalHqAmount)}
           </p>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <p className="text-xs text-gray-500 font-medium">소매 총 주문액 (본사 공급가 기준)</p>
+          <p className="text-xs text-gray-500 font-medium">소매 총 주문액 (소매 공급가 기준)</p>
           <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
             {loading ? '-' : formatKRW(stats.totalRetailerAmount)}
           </p>
@@ -461,7 +448,7 @@ export default function HQPerformance() {
                   : 'border-transparent text-gray-500 hover:text-gray-800'
               }`}
             >
-              소매점 실적 순위 (본사 공급 기준)
+              소매점 실적 순위 (소매 공급 기준)
             </button>
           </div>
 
