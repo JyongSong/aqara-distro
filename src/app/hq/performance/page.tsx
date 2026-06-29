@@ -59,7 +59,7 @@ export default function HQPerformance() {
   const [selectedStatuses, setSelectedStatuses] = useState<OrderStatus[]>(DEFAULT_STATUSES)
   const [showStatusFilter, setShowStatusFilter] = useState(false)
 
-  const [activeTab, setActiveTab] = useState<'distributor' | 'retailer'>('distributor')
+  const [activeTab, setActiveTab] = useState<'distributor' | 'retailer'>('retailer')
   const [orders, setOrders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -426,19 +426,6 @@ export default function HQPerformance() {
           <div className="flex border-b border-gray-200 bg-gray-50">
             <button
               onClick={() => {
-                setActiveTab('distributor')
-                setSelectedMerchantId(null)
-              }}
-              className={`flex-1 py-3.5 text-center text-sm font-semibold border-b-2 transition-all ${
-                activeTab === 'distributor'
-                  ? 'border-blue-600 text-blue-600 bg-white'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              총판 실적 순위 (본사 공급 기준)
-            </button>
-            <button
-              onClick={() => {
                 setActiveTab('retailer')
                 setSelectedMerchantId(null)
               }}
@@ -449,6 +436,19 @@ export default function HQPerformance() {
               }`}
             >
               소매점 실적 순위 (소매 공급 기준)
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('distributor')
+                setSelectedMerchantId(null)
+              }}
+              className={`flex-1 py-3.5 text-center text-sm font-semibold border-b-2 transition-all ${
+                activeTab === 'distributor'
+                  ? 'border-blue-600 text-blue-600 bg-white'
+                  : 'border-transparent text-gray-500 hover:text-gray-800'
+              }`}
+            >
+              총판 실적 순위 (본사 공급 기준)
             </button>
           </div>
 
