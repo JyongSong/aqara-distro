@@ -13,10 +13,11 @@ function getService(): SolapiMessageService | null {
 
 export async function sendSms(
   to: string | null | undefined,
-  text: string
-): Promise<void> {
+  text: string,
+  senderNumber?: string
+): Promise<any> {
   if (!to) return
-  const from = process.env.SOLAPI_SENDER
+  const from = senderNumber || process.env.SOLAPI_SENDER
   if (!from) return
 
   const service = getService()
@@ -27,8 +28,9 @@ export async function sendSms(
   if (!normalized) return
 
   try {
-    await service.send({ to: normalized, from, text })
+    return await service.send({ to: normalized, from, text })
   } catch (e) {
     console.error('[SMS] 발송 실패:', e)
+    throw e
   }
 }
