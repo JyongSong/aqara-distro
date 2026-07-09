@@ -43,27 +43,46 @@ export async function PATCH(
     return NextResponse.json({ error: 'box_ids required' }, { status: 400 })
   }
 
-  // 서버사이드 박스 ID 형식 검증
-  for (const id of body.box_ids.K100 ?? []) {
-    const err = validateBoxId('K100', id)
-    if (err) return NextResponse.json({ error: err }, { status: 400 })
-  }
-  for (const id of body.box_ids.L100 ?? []) {
-    const err = validateBoxId('L100', id)
-    if (err) return NextResponse.json({ error: err }, { status: 400 })
-  }
-
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
+
+  // 1. 물류 설정 조회
+  const { data: settingsData } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'logistics_sn_items')
+    .single()
+  const activeItems: string[] = (settingsData?.value as string[]) ?? ['K100', 'L100']
+
+  // 서버사이드 박스 ID 형식 검증 및 정제 (설정에서 활성화된 품목만 검증 및 저장)
+  const cleanedBoxIds: { K100?: string[]; L100?: string[] } = {}
+
+  if (activeItems.includes('K100')) {
+    const k100Ids = body.box_ids.K100 ?? []
+    for (const id of k100Ids) {
+      const err = validateBoxId('K100', id)
+      if (err) return NextResponse.json({ error: err }, { status: 400 })
+    }
+    cleanedBoxIds.K100 = k100Ids
+  }
+
+  if (activeItems.includes('L100')) {
+    const l100Ids = body.box_ids.L100 ?? []
+    for (const id of l100Ids) {
+      const err = validateBoxId('L100', id)
+      if (err) return NextResponse.json({ error: err }, { status: 400 })
+    }
+    cleanedBoxIds.L100 = l100Ids
+  }
 
   const { data, error } = await supabase
     .from('orders')
     .update({
       status: 'SHIPPED',
       shipped_at: new Date().toISOString(),
-      box_ids: body.box_ids,
+      box_ids: cleanedBoxIds,
     })
     .eq('id', id)
     .eq('status', 'PREPARING')

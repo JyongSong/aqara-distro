@@ -7,6 +7,14 @@ export async function GET() {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
+  // 1. 물류 설정 조회
+  const { data: settingsData } = await supabase
+    .from('system_settings')
+    .select('value')
+    .eq('key', 'logistics_sn_items')
+    .single()
+  const activeItems: string[] = (settingsData?.value as string[]) ?? ['K100', 'L100']
+
   // PREPARING 상태이고 fulfillment_type이 distributor가 아닌 주문 조회
   const { data: orders, error } = await supabase
     .from('orders')
@@ -29,7 +37,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // JS에서 K100 또는 L100 포함 주문만 필터링
+  // JS에서 설정된 일련번호 기록 대상 품목이 포함된 주문만 필터링
   type RawItem = {
     quantity: number
     product: { name: string; product_code: string } | null
@@ -47,7 +55,7 @@ export async function GET() {
   const filtered = ((orders ?? []) as unknown as RawOrder[]).filter((order) =>
     order.order_items.some((item) => {
       const code = item.product?.product_code ?? ''
-      return /K100/i.test(code) || /L100/i.test(code)
+      return activeItems.some(itemType => new RegExp(itemType, 'i').test(code))
     })
   )
 
@@ -55,13 +63,17 @@ export async function GET() {
   const result = filtered.map((order) => {
     const items = order.order_items as RawItem[]
 
-    const k100Qty = items
-      .filter((i) => /K100/i.test(i.product?.product_code ?? ''))
-      .reduce((sum, i) => sum + i.quantity, 0)
+    const k100Qty = activeItems.includes('K100')
+      ? items
+          .filter((i) => /K100/i.test(i.product?.product_code ?? ''))
+          .reduce((sum, i) => sum + i.quantity, 0)
+      : 0
 
-    const l100Qty = items
-      .filter((i) => /L100/i.test(i.product?.product_code ?? ''))
-      .reduce((sum, i) => sum + i.quantity, 0)
+    const l100Qty = activeItems.includes('L100')
+      ? items
+          .filter((i) => /L100/i.test(i.product?.product_code ?? ''))
+          .reduce((sum, i) => sum + i.quantity, 0)
+      : 0
 
     return {
       id: order.id,
