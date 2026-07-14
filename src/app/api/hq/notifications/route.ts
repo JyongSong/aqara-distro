@@ -16,7 +16,8 @@ type Result = {
 export async function GET() {
   const senders = [
     process.env.SOLAPI_SENDER,
-    process.env.SOLAPI_SENDER_2
+    process.env.SOLAPI_SENDER_2,
+    process.env.SOLAPI_SENDER_3
   ].filter(Boolean) as string[]
   return NextResponse.json({ senders })
 }
