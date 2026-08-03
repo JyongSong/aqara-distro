@@ -1,14 +1,32 @@
 import { createAdminClient } from '@/lib/supabase/admin'
+import { requireRole, ALL_ROLES } from '@/lib/api-auth'
 import { sendSms } from '@/lib/sms'
 import { getErpTrackingNumber } from '@/lib/erp'
 import { NextRequest, NextResponse } from 'next/server'
+import type { OrderStatus, UserRole } from '@/lib/types'
 
 const APP_URL = 'https://aqara-distro.vercel.app'
+
+/**
+ * 역할별로 지시할 수 있는 상태.
+ * 현재 화면에서 실제로 호출하는 값만 허용한다(최소 권한).
+ *   retailer    발주/견적 제출, 발주 확정, 수령 확인
+ *   distributor 본사 직발주 제출, 견적 발송, 승인, 총판 출고 진행
+ *   hq          접수 → 출고 준비 → 출고 → 거래 완료
+ */
+const ALLOWED_STATUSES: Record<UserRole, readonly OrderStatus[]> = {
+  retailer:    ['SUBMITTED', 'ORDER_PLACED', 'DELIVERED'],
+  distributor: ['SUBMITTED', 'QUOTE_SENT', 'APPROVED', 'HQ_RECEIVED', 'PREPARING', 'SHIPPED'],
+  hq:          ['HQ_RECEIVED', 'PREPARING', 'SHIPPED', 'COMPLETED'],
+}
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { user, error: authError } = await requireRole(ALL_ROLES)
+  if (authError) return authError
+
   const { id } = await params
 
   let body: { newStatus: string }
@@ -21,6 +39,10 @@ export async function PATCH(
   const { newStatus } = body
   if (!newStatus) {
     return NextResponse.json({ error: 'newStatus required' }, { status: 400 })
+  }
+
+  if (!ALLOWED_STATUSES[user.role].includes(newStatus as OrderStatus)) {
+    return NextResponse.json({ error: '허용되지 않은 상태 변경입니다.' }, { status: 403 })
   }
 
   const supabase = createAdminClient()
@@ -38,6 +60,14 @@ export async function PATCH(
 
   if (fetchError || !order) {
     return NextResponse.json({ error: 'Order not found' }, { status: 404 })
+  }
+
+  // 본인이 당사자인 주문만 변경 가능 (hq 는 전체 주문 처리)
+  if (user.role === 'retailer' && order.retailer_id !== user.id) {
+    return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
+  }
+  if (user.role === 'distributor' && order.distributor_id !== user.id) {
+    return NextResponse.json({ error: '권한이 없습니다.' }, { status: 403 })
   }
 
   // 타임스탬프 설정

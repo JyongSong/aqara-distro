@@ -1,4 +1,5 @@
 import { sendSms } from '@/lib/sms'
+import { requireRole } from '@/lib/api-auth'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
@@ -14,6 +15,9 @@ type Result = {
 }
 
 export async function GET() {
+  const { error: authError } = await requireRole(['hq'])
+  if (authError) return authError
+
   const senders = [
     process.env.SOLAPI_SENDER,
     process.env.SOLAPI_SENDER_2,

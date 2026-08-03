@@ -1,15 +1,16 @@
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireRole } from '@/lib/api-auth'
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 
 export async function GET(request: NextRequest) {
+  const { error: authError } = await requireRole(['hq'])
+  if (authError) return authError
+
   const orderId = request.nextUrl.searchParams.get('id')
   if (!orderId) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const supabase = createAdminClient()
 
   const { data: order } = await supabase
     .from('orders')

@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getErpPool } from '@/lib/erp'
+import { requireRole } from '@/lib/api-auth'
 import sql from 'mssql'
 
 export async function GET(req: NextRequest) {
+  const { error: authError } = await requireRole(['hq'])
+  if (authError) return authError
+
   const { searchParams } = new URL(req.url)
   const dateFrom = searchParams.get('from') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
   const dateTo   = searchParams.get('to')   || new Date().toISOString().slice(0, 10)

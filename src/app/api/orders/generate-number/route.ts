@@ -1,11 +1,12 @@
-import { createClient } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { requireRole, ALL_ROLES } from '@/lib/api-auth'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const { error: authError } = await requireRole(ALL_ROLES)
+  if (authError) return authError
+
+  const supabase = createAdminClient()
 
   // 서울 시간 기준 날짜 (UTC+9)
   const now = new Date(Date.now() + 9 * 60 * 60 * 1000)

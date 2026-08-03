@@ -11,8 +11,14 @@ const STATUSES_TO_CHECK = ['APPROVED', 'HQ_RECEIVED', 'PREPARING', 'SHIPPED']
 
 export async function GET(request: NextRequest) {
   // Vercel Cron은 Authorization: Bearer <CRON_SECRET> 헤더를 자동 추가
+  // CRON_SECRET 미설정 시 `Bearer undefined` 로 통과되는 것을 막기 위해 존재 여부를 먼저 검사
+  const cronSecret = process.env.CRON_SECRET
+  if (!cronSecret) {
+    console.error('[cron/sync-shipments] CRON_SECRET is not configured')
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
   const auth = request.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (auth !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

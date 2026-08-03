@@ -1,0 +1,35 @@
+-- 008: partner_surveys 의 공개 SELECT 정책 제거
+--
+-- 배경
+--   006 에서 만든 정책은 의도가 "가입 화면에서 survey_id 로 자기 신청서 단건 조회"
+--   였으나, 실제 조건이 `USING (status = 'approved')` 뿐이라 id 제약이 없었다.
+--   그 결과 anon key 만 있으면 승인된 신청서 전체를 조회할 수 있었다.
+--
+--   유출 범위: business_name, contact_name, contact_phone, email,
+--              business_address, annual_sales_volume, sales_target 등
+--   더 심각한 점: partner_surveys.id 는 그대로 가입 초대 토큰
+--              (/register?survey_id=<id>) 이므로, 목록을 얻으면
+--              타인 명의로 가입을 완료할 수 있었다.
+--
+-- 안전성
+--   partner_surveys 에 접근하는 코드는 전부 서버 라우트이며
+--   createAdminClient() (service role) 를 사용해 RLS 를 우회한다.
+--   따라서 이 정책을 지워도 동작에 영향이 없다.
+--     - api/open/partner-invite       GET/POST/PATCH  admin client
+--     - api/register                  POST            admin client
+--     - api/hq/partner-surveys        GET/PATCH       admin client + HQ 검사
+--   가입 화면의 'approved' 상태 검사는 애플리케이션 레벨에서 수행된다
+--   (api/open/partner-invite/route.ts 의 status !== 'approved' 검사).
+--
+--   anon key 로 partner_surveys 를 직접 조회하는 클라이언트 코드는 없다.
+
+DROP POLICY IF EXISTS "Allow public select approved partner_surveys by id" ON partner_surveys;
+
+-- 참고: 남아 있는 정책
+--   "Allow public insert to partner_surveys"      INSERT  WITH CHECK (true)
+--   "Allow HQ select all partner_surveys"         SELECT  get_user_role() = 'hq'
+--   "Allow HQ update partner_surveys"             UPDATE  get_user_role() = 'hq'
+--
+-- 공개 INSERT 정책은 유지한다. 다만 이것도 실제로는 서버 라우트가 admin client
+-- 로 처리하고 있어 불필요할 가능성이 높고, 현재 스로틀링이 없다.
+-- 별도 과제로 검토할 것.
