@@ -1,5 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { requireRole } from '@/lib/api-auth'
+import { calculateTotalWithVAT } from '@/lib/utils'
 import { NextRequest, NextResponse } from 'next/server'
 import * as XLSX from 'xlsx'
 
@@ -52,8 +53,10 @@ export async function GET(request: NextRequest) {
 
     for (const item of orderItems) {
       const hqUnitPrice = item.hq_unit_price || 0
-      const unitPriceVat = Math.round(hqUnitPrice * 1.1)
-      const totalVat = unitPriceVat * item.quantity
+      const hqAmount = item.hq_amount ?? hqUnitPrice * item.quantity
+      // VAT는 화면/거래명세서와 동일하게 금액 기준으로 산정한다(공급단가는 단가 기준 표시용)
+      const unitPriceVat = calculateTotalWithVAT(hqUnitPrice)
+      const totalVat = calculateTotalWithVAT(hqAmount)
       rows.push([
         rowNo++,
         order.order_number,

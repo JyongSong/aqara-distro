@@ -75,6 +75,10 @@ export async function PATCH(
   if (newStatus === 'SHIPPED')    updateData.shipped_at   = new Date().toISOString()
   if (newStatus === 'DELIVERED')  updateData.delivered_at = new Date().toISOString()
   if (newStatus === 'SUBMITTED')  updateData.submitted_at = new Date().toISOString()
+  if (newStatus === 'APPROVED') {
+    updateData.approved_at = new Date().toISOString()
+    updateData.approved_by = user.id
+  }
 
   const { data: updatedOrder, error: updateError } = await supabase
     .from('orders')

@@ -33,8 +33,10 @@ export default function RetailerDashboard() {
           { count: shipped },
         ] = await Promise.all([
           supabase.from('orders').select('*', { count: 'exact', head: true }).eq('retailer_id', profile.id),
-          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('retailer_id', profile.id).in('status', ['SUBMITTED', 'APPROVED', 'HQ_RECEIVED', 'PREPARING']),
-          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('retailer_id', profile.id).eq('status', 'SHIPPED'),
+          // 진행 중: 제출~출고준비까지의 모든 활성 상태 (출고 전)
+          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('retailer_id', profile.id).in('status', ['SUBMITTED', 'QUOTE_SENT', 'ORDER_PLACED', 'APPROVED', 'HQ_RECEIVED', 'PREPARING']),
+          // 출고 완료: 출고 후 상태 누적 (수령/완료 후에도 카운트 유지)
+          supabase.from('orders').select('*', { count: 'exact', head: true }).eq('retailer_id', profile.id).in('status', ['SHIPPED', 'DELIVERED', 'COMPLETED']),
         ])
 
         setStats({
