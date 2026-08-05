@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { Order, OrderItem, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
+import { Order, OrderItem, ORDER_STATUS_COLORS, getOrderStatusLabel } from '@/lib/types'
 import { formatKRW, formatDateTime, formatDate, calculateVAT, calculateTotalWithVAT, cn, escapeHtml, numberToKorean } from '@/lib/utils'
 import Link from 'next/link'
 import { use } from 'react'
@@ -172,7 +172,7 @@ export default function RetailerOrderDetailPage({ params }: { params: Promise<{ 
           'inline-flex px-3 py-1 rounded-full text-sm font-medium',
           ORDER_STATUS_COLORS[order.status]
         )}>
-          {ORDER_STATUS_LABELS[order.status]}
+          {getOrderStatusLabel(order)}
         </span>
       </div>
 

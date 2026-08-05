@@ -3,18 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { createClient } from '@/lib/supabase/client'
-import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
+import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, getOrderStatusLabel } from '@/lib/types'
 import { formatKRW, formatDateTime, cn } from '@/lib/utils'
 import Link from 'next/link'
 
 type Tab = 'retailer' | 'hq'
-
-function getDisplayLabel(order: Order): string {
-  if (order.status === 'SUBMITTED' && order.order_type === 'direct') {
-    return '발주 요청'
-  }
-  return ORDER_STATUS_LABELS[order.status]
-}
 
 export default function DistributorOrdersPage() {
   const { profile } = useAuth()
@@ -185,7 +178,7 @@ export default function DistributorOrdersPage() {
                         'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                         ORDER_STATUS_COLORS[order.status]
                       )}>
-                        {getDisplayLabel(order)}
+                        {getOrderStatusLabel(order)}
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right text-sm text-gray-900">{formatKRW(order.retailer_total)}</td>
@@ -213,7 +206,7 @@ export default function DistributorOrdersPage() {
                       'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                       ORDER_STATUS_COLORS[order.status]
                     )}>
-                      {getDisplayLabel(order)}
+                      {getOrderStatusLabel(order)}
                     </span>
                   </div>
                   {tab === 'retailer' && (

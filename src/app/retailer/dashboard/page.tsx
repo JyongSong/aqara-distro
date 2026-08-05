@@ -3,7 +3,7 @@
 import { useAuth } from '@/hooks/useAuth'
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Order, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from '@/lib/types'
+import { Order, ORDER_STATUS_COLORS, getOrderStatusLabel } from '@/lib/types'
 import { formatKRW, formatDateTime, cn } from '@/lib/utils'
 import Link from 'next/link'
 
@@ -121,7 +121,7 @@ export default function RetailerDashboard() {
                         'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                         ORDER_STATUS_COLORS[order.status]
                       )}>
-                        {ORDER_STATUS_LABELS[order.status]}
+                        {getOrderStatusLabel(order)}
                       </span>
                     </td>
                     <td className="px-6 py-3 text-right text-sm text-gray-900">
@@ -145,7 +145,7 @@ export default function RetailerDashboard() {
                       'inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium',
                       ORDER_STATUS_COLORS[order.status]
                     )}>
-                      {ORDER_STATUS_LABELS[order.status]}
+                      {getOrderStatusLabel(order)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">

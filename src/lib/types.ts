@@ -146,6 +146,17 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   COMPLETED: '완료',
 }
 
+// 주문 상태 표시 라벨 (직접발주 주문의 SUBMITTED 는 '발주 요청' 으로 표시)
+export function getOrderStatusLabel(order: {
+  status: OrderStatus
+  order_type?: Order['order_type']
+}): string {
+  if (order.status === 'SUBMITTED' && order.order_type === 'direct') {
+    return '발주 요청'
+  }
+  return ORDER_STATUS_LABELS[order.status]
+}
+
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   DRAFT: 'bg-gray-100 text-gray-600',
   SUBMITTED: 'bg-blue-100 text-blue-700',
