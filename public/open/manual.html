@@ -1,0 +1,688 @@
+<title>소매점 발주 매뉴얼</title>
+<style>
+  :root{
+    --ground:#F5F7FA;
+    --surface:#FFFFFF;
+    --surface-2:#FBFCFE;
+    --ink:#182233;
+    --ink-soft:#5A6478;
+    --ink-faint:#8A93A6;
+    --line:#E4E8EF;
+    --line-strong:#D3D9E3;
+    --accent:#2B5CE6;
+    --accent-ink:#1E45B4;
+    --accent-soft:#EAF0FE;
+    --tip-bh:#2f6bed;
+    --warn-bh:#d97706;
+    --shadow:0 1px 2px rgba(20,30,50,.04),0 8px 24px rgba(20,30,50,.06);
+    --radius:14px;
+    --maxw:760px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0D1119;
+      --surface:#151B26;
+      --surface-2:#1A212E;
+      --ink:#E9EDF5;
+      --ink-soft:#9AA4B8;
+      --ink-faint:#6E7688;
+      --line:#26303F;
+      --line-strong:#333E50;
+      --accent:#6E9BFF;
+      --accent-ink:#A9C2FF;
+      --accent-soft:#17233C;
+      --tip-bh:#5b8cff;
+      --warn-bh:#f0a836;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0D1119;
+    --surface:#151B26;
+    --surface-2:#1A212E;
+    --ink:#E9EDF5;
+    --ink-soft:#9AA4B8;
+    --ink-faint:#6E7688;
+    --line:#26303F;
+    --line-strong:#333E50;
+    --accent:#6E9BFF;
+    --accent-ink:#A9C2FF;
+    --accent-soft:#17233C;
+    --tip-bh:#5b8cff;
+    --warn-bh:#f0a836;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+  body{
+    margin:0;
+    background:var(--ground);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Malgun Gothic","Noto Sans KR","Segoe UI",system-ui,sans-serif;
+    font-size:16px;line-height:1.72;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+  a{color:var(--accent-ink);text-decoration:none}
+  a:hover{text-decoration:underline}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+
+  /* ---------- Header ---------- */
+  .top{
+    position:relative;
+    background:
+      radial-gradient(120% 140% at 85% -20%, color-mix(in srgb,var(--accent) 20%, transparent), transparent 60%),
+      linear-gradient(180deg, var(--surface), var(--surface-2));
+    border-bottom:1px solid var(--line);
+  }
+  .top-inner{max-width:1120px;margin:0 auto;padding:38px 24px 30px}
+  .brandrow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand .mark{
+    width:38px;height:38px;border-radius:10px;flex:0 0 auto;
+    background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%, #7B4DFF));
+    display:grid;place-items:center;color:#fff;font-size:20px;
+    box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 40%, transparent);
+  }
+  .brand .bt{font-weight:800;font-size:1.02rem;letter-spacing:-.01em}
+  .brand .bs{font-size:.76rem;color:var(--ink-faint);letter-spacing:.02em}
+  .theme-btn{
+    border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-soft);
+    width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:16px;display:grid;place-items:center;
+  }
+  .theme-btn:hover{color:var(--ink);border-color:var(--accent)}
+
+  .eyebrow{
+    margin-top:26px;font-size:.72rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--accent-ink);
+  }
+  h1.title{
+    margin:.35rem 0 .5rem;font-size:clamp(1.9rem,4.4vw,2.7rem);line-height:1.15;letter-spacing:-.02em;
+    font-weight:800;text-wrap:balance;
+  }
+  .lede{max-width:60ch;color:var(--ink-soft);font-size:1.02rem;margin:.2rem 0 0}
+
+  /* flow diagram */
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin-top:26px}
+  .flow .node{
+    display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);
+    border-radius:12px;padding:10px 13px;box-shadow:var(--shadow);
+  }
+  .flow .node .ico{font-size:20px;line-height:1}
+  .flow .node .lb{font-weight:700;font-size:.92rem;line-height:1.15}
+  .flow .node .rl{font-size:.72rem;color:var(--ink-faint)}
+  .flow .arw{display:grid;place-items:center;color:var(--accent);font-size:1.1rem;font-weight:700}
+  @media (max-width:560px){.flow .arw{transform:rotate(90deg)}.flow{flex-direction:column;align-items:flex-start}}
+
+  /* ---------- Layout ---------- */
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:250px minmax(0,1fr);gap:44px;align-items:start}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr;gap:0}}
+
+  /* TOC */
+  .sidebar{position:sticky;top:0;align-self:start;padding:30px 0}
+  @media (max-width:900px){
+    .sidebar{position:sticky;top:0;z-index:20;padding:0;margin:0 -24px;background:color-mix(in srgb,var(--ground) 92%, transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  }
+  .toc-head{display:none}
+  .toc{display:flex;flex-direction:column;gap:1px}
+  .toc a{
+    display:flex;gap:9px;align-items:baseline;color:var(--ink-soft);font-size:.9rem;
+    padding:6px 12px;border-radius:8px;border-left:2px solid transparent;line-height:1.35;
+  }
+  .toc a .n{font-variant-numeric:tabular-nums;color:var(--ink-faint);font-weight:700;font-size:.8rem;min-width:1.1em}
+  .toc a:hover{background:var(--surface);color:var(--ink);text-decoration:none}
+  .toc a.active{color:var(--accent-ink);background:var(--accent-soft);border-left-color:var(--accent);font-weight:600}
+  .toc a.star .n{color:var(--accent)}
+  @media (max-width:900px){
+    .toc-head{display:flex;align-items:center;justify-content:space-between;padding:13px 24px;cursor:pointer;font-weight:700;font-size:.92rem;color:var(--ink)}
+    .toc-head .chev{transition:transform .2s;color:var(--ink-faint)}
+    .sidebar.open .toc-head .chev{transform:rotate(180deg)}
+    .toc{display:none;padding:2px 16px 14px}
+    .sidebar.open .toc{display:flex}
+  }
+
+  /* Main */
+  main{padding:34px 0 80px;min-width:0}
+  @media (max-width:900px){main{padding:24px 0 64px}}
+
+  section.doc{scroll-margin-top:70px;margin-bottom:14px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin:36px 0 14px;padding-top:14px;border-top:1px solid var(--line)}
+  section.doc:first-of-type .sec-head{border-top:none;margin-top:0;padding-top:0}
+  .sec-head .num{
+    font-variant-numeric:tabular-nums;font-weight:800;font-size:1.05rem;color:var(--accent);
+    background:var(--accent-soft);border-radius:9px;min-width:2.1rem;height:2.1rem;display:grid;place-items:center;flex:0 0 auto;
+  }
+  h2.sec-title{margin:0;font-size:1.5rem;letter-spacing:-.02em;font-weight:800;text-wrap:balance;line-height:1.2}
+  h3.sub{margin:26px 0 8px;font-size:1.06rem;font-weight:700;letter-spacing:-.01em;display:flex;gap:8px;align-items:center}
+  h3.sub .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+  p{margin:.55rem 0;max-width:66ch}
+  main ul{margin:.5rem 0;padding-left:1.15rem;max-width:66ch}
+  main ul li{margin:.3rem 0}
+  main ul li::marker{color:var(--accent)}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+  .prose-card{padding:4px 22px}
+
+  /* tables */
+  .tw{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin:14px 0;background:var(--surface)}
+  table{border-collapse:collapse;width:100%;font-size:.92rem;min-width:420px}
+  th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line);vertical-align:top}
+  thead th{background:var(--surface-2);font-weight:700;font-size:.82rem;letter-spacing:.01em;color:var(--ink-soft);white-space:nowrap;position:sticky;top:0}
+  tbody tr:last-child td{border-bottom:none}
+  td.k{font-weight:700;white-space:nowrap;color:var(--ink)}
+  td .req{display:inline-block;font-size:.7rem;font-weight:700;color:#fff;background:var(--accent);border-radius:5px;padding:1px 6px}
+  td .opt{display:inline-block;font-size:.7rem;font-weight:700;color:var(--ink-soft);background:color-mix(in srgb,var(--ink-faint) 18%,transparent);border-radius:5px;padding:1px 6px}
+  .screen{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent-ink);padding:1px 6px;border-radius:5px;white-space:nowrap}
+
+  /* callouts */
+  .call{display:flex;gap:12px;border-radius:var(--radius);padding:14px 16px;margin:14px 0;border:1px solid;font-size:.95rem;line-height:1.6}
+  .call .ci{font-size:1.05rem;line-height:1.4;flex:0 0 auto}
+  .call .cc{min-width:0}
+  .call .ct{font-weight:700;font-size:.8rem;letter-spacing:.03em;text-transform:uppercase;margin-bottom:2px}
+  .call p{margin:.25rem 0;max-width:none}
+  .call ul{margin:.25rem 0}
+  .tip{background:color-mix(in srgb,var(--tip-bh) 9%,var(--surface));border-color:color-mix(in srgb,var(--tip-bh) 26%,transparent)}
+  .tip .ct{color:color-mix(in srgb,var(--tip-bh) 78%,var(--ink))}
+  .warn{background:color-mix(in srgb,var(--warn-bh) 11%,var(--surface));border-color:color-mix(in srgb,var(--warn-bh) 30%,transparent)}
+  .warn .ct{color:color-mix(in srgb,var(--warn-bh) 72%,var(--ink))}
+
+  /* steps */
+  .steps{display:flex;flex-direction:column;gap:12px;margin:16px 0;counter-reset:step}
+  .step{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px 16px 18px;box-shadow:var(--shadow)}
+  .step .sl{display:inline-flex;align-items:center;gap:8px;font-size:.74rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:4px}
+  .step .sl .sn{background:var(--accent);color:#fff;border-radius:6px;min-width:1.5rem;height:1.5rem;display:grid;place-items:center;font-size:.82rem}
+  .step h4{margin:.1rem 0 .3rem;font-size:1.02rem;font-weight:700}
+  .step p{margin:.35rem 0}
+
+  /* feature section (§6) */
+  .feature{border:1.5px solid color-mix(in srgb,var(--accent) 40%,var(--line));border-radius:calc(var(--radius) + 4px);background:
+      linear-gradient(180deg,color-mix(in srgb,var(--accent) 7%,var(--surface)),var(--surface));
+    padding:6px 22px 22px;box-shadow:0 8px 30px color-mix(in srgb,var(--accent) 14%,transparent)}
+  .feature .flag{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#fff;font-weight:700;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;padding:5px 12px;border-radius:999px;transform:translateY(-14px);box-shadow:0 4px 14px color-mix(in srgb,var(--accent) 40%,transparent)}
+
+  /* status badges */
+  .badge{display:inline-block;font-weight:700;font-size:.82rem;padding:2px 10px;border-radius:999px;white-space:nowrap;
+    background:color-mix(in srgb,var(--bh) 15%,var(--surface));
+    color:color-mix(in srgb,var(--bh) 72%,var(--ink));
+    border:1px solid color-mix(in srgb,var(--bh) 32%,transparent)}
+  .b-order{--bh:#2f6bed}.b-approved{--bh:#16a34a}.b-reject{--bh:#e5484d}.b-hq{--bh:#8b5cf6}
+  .b-prep{--bh:#d97706}.b-shipped{--bh:#4f46e5}.b-delivered{--bh:#0d9488}.b-done{--bh:#059669}
+
+  /* screenshot placeholder */
+  .shot{display:flex;gap:12px;align-items:center;border:1.5px dashed var(--line-strong);border-radius:var(--radius);
+    padding:16px 18px;margin:14px 0;color:var(--ink-faint);background:var(--surface-2);font-size:.9rem}
+  .shot .si{font-size:1.4rem}
+
+  /* contact */
+  .contact{display:grid;gap:2px}
+  .contact .row{display:flex;flex-wrap:wrap;gap:6px 14px;padding:11px 0;border-bottom:1px solid var(--line)}
+  .contact .row:last-child{border-bottom:none}
+  .contact .cl{font-weight:700;min-width:110px;color:var(--ink-soft);font-size:.9rem}
+  .contact .cv{font-weight:600}
+  .contact .cta-note{margin-top:14px;color:var(--ink-soft);font-size:.93rem}
+
+  footer{max-width:1120px;margin:0 auto;padding:26px 24px 50px;color:var(--ink-faint);font-size:.82rem;border-top:1px solid var(--line)}
+  .kbd{font-family:ui-monospace,Menlo,monospace;font-size:.82em;border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:5px;padding:0 5px;background:var(--surface)}
+
+  figure.fig{margin:16px 0 6px;text-align:center}
+  figure.fig img{max-width:100%;max-height:660px;width:auto;height:auto;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);background:var(--surface);vertical-align:top}
+  figure.fig .figrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  figure.fig .figrow img{max-height:520px}
+  figure.fig figcaption{margin-top:9px;font-size:.8rem;color:var(--ink-faint);letter-spacing:.01em}
+  figure.hero img{max-height:none;border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+</style>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brandrow">
+      <div class="brand">
+        <div class="mark">📦</div>
+        <div>
+          <div class="bt">Aqara Distro</div>
+          <div class="bs">발주·거래 관리 시스템</div>
+        </div>
+      </div>
+      <button class="theme-btn" id="themeBtn" aria-label="라이트/다크 전환" title="라이트/다크 전환">◑</button>
+    </div>
+
+    <div class="eyebrow">Quick Start Guide · 소매점용</div>
+    <h1 class="title">소매점 빠른 시작 매뉴얼</h1>
+    <p class="lede">회원가입부터 <strong>발주 요청</strong>, 수령 확인, 거래명세서 출력까지 — 소매점 담당자가 처음 사용할 때 필요한 내용을 순서대로 정리했습니다.</p>
+
+    <div class="flow" aria-label="발주 흐름">
+      <div class="node"><span class="ico">📝</span><span><span class="lb">발주 요청</span><br><span class="rl">소매점</span></span></div>
+      <div class="arw">▶</div>
+      <div class="node"><span class="ico">✅</span><span><span class="lb">승인</span><br><span class="rl">총판</span></span></div>
+      <div class="arw">▶</div>
+      <div class="node"><span class="ico">📥</span><span><span class="lb">접수·출고준비</span><br><span class="rl">본사/총판</span></span></div>
+      <div class="arw">▶</div>
+      <div class="node"><span class="ico">🚚</span><span><span class="lb">출고</span><br><span class="rl">본사/총판</span></span></div>
+      <div class="arw">▶</div>
+      <div class="node"><span class="ico">🙌</span><span><span class="lb">수령 확인</span><br><span class="rl">소매점</span></span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="sidebar" id="sidebar">
+    <div class="toc-head" id="tocHead">목차 <span class="chev">▾</span></div>
+    <nav class="toc" id="toc" aria-label="목차">
+      <a href="#s1"><span class="n">1</span> 시작하기 전에</a>
+      <a href="#s2"><span class="n">2</span> 회원가입 및 로그인</a>
+      <a href="#s3"><span class="n">3</span> 화면 둘러보기</a>
+      <a href="#s4"><span class="n">4</span> 대시보드</a>
+      <a href="#s5"><span class="n">5</span> 상품 리스트 확인</a>
+      <a href="#s6" class="star"><span class="n">6</span> 발주 요청하기 ★</a>
+      <a href="#s7"><span class="n">7</span> 수령 확인·거래명세서</a>
+      <a href="#s8"><span class="n">8</span> 자주 묻는 질문</a>
+      <a href="#a"><span class="n">A</span> 주문 상태 참조표</a>
+      <a href="#b"><span class="n">B</span> 문자(SMS) 안내</a>
+      <a href="#c"><span class="n">C</span> 문의처</a>
+    </nav>
+  </aside>
+
+  <main>
+    <!-- 1 -->
+    <section class="doc" id="s1">
+      <div class="sec-head"><span class="num">1</span><h2 class="sec-title">시작하기 전에</h2></div>
+
+      <h3 class="sub"><span class="dot"></span>1.1 시스템 개요</h3>
+      <p>Aqara Distro는 <strong>본사 ↔ 총판 ↔ 소매점</strong> 3단계로 이어지는 발주·거래 흐름을 온라인으로 관리하는 플랫폼입니다. 소매점은 담당 총판에 발주를 요청하고, 총판이 승인하면 본사 또는 총판이 상품을 출고합니다. 소매점은 상품을 받은 뒤 수령 확인을 하고 거래명세서를 출력할 수 있습니다.</p>
+
+      <h3 class="sub"><span class="dot"></span>1.2 이용 준비물</h3>
+      <div class="tw"><table>
+        <thead><tr><th>준비물</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><td class="k">이메일 주소</td><td>로그인 ID로 사용됩니다. 담당자가 상시 확인 가능한 주소를 사용하세요.</td></tr>
+          <tr><td class="k">총판 코드</td><td>영업 담당자에게서 발급받은 코드입니다. 가입 시 반드시 정확히 입력해야 합니다.</td></tr>
+          <tr><td class="k">납품 받는 주소</td><td>상품을 실제로 받는 주소입니다. 우편번호 검색으로 입력합니다.</td></tr>
+          <tr><td class="k">휴대전화 번호</td><td>발주 진행 상황이 문자(SMS)/카카오톡으로 안내됩니다.</td></tr>
+          <tr><td class="k">브라우저</td><td>PC·모바일 모두 사용할 수 있습니다. 거래명세서 인쇄를 위해 팝업 차단 해제가 필요합니다.</td></tr>
+        </tbody>
+      </table></div>
+
+      <h3 class="sub"><span class="dot"></span>1.3 용어 정리</h3>
+      <div class="tw"><table>
+        <thead><tr><th>용어</th><th>뜻</th></tr></thead>
+        <tbody>
+          <tr><td class="k">MOQ</td><td>최소발주수량. 이 수량보다 적게 주문할 수 없습니다.</td></tr>
+          <tr><td class="k">발주 단위</td><td>주문 수량의 배수 단위입니다. 단위가 10이면 10, 20, 30… 형태로만 주문됩니다.</td></tr>
+          <tr><td class="k">소비자가</td><td>공식 몰에 표시되는 소비자 판매가격입니다. 소매점 매입 단가와는 다릅니다.</td></tr>
+          <tr><td class="k">공급가액</td><td>부가세를 제외한 금액입니다.</td></tr>
+          <tr><td class="k">부가세 (10%)</td><td>공급가액의 10%입니다.</td></tr>
+          <tr><td class="k">송장번호</td><td>택배 운송장 번호입니다. 출고 시 문자와 주문 상세에서 확인할 수 있습니다.</td></tr>
+          <tr><td class="k">거래명세서</td><td>거래 내역을 정리한 인쇄용 문서입니다. 수령 확인 이후 출력할 수 있습니다.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    <!-- 2 -->
+    <section class="doc" id="s2">
+      <div class="sec-head"><span class="num">2</span><h2 class="sec-title">회원가입 및 로그인</h2></div>
+
+      <h3 class="sub"><span class="dot"></span>2.1 회원가입</h3>
+      <p>회원가입 화면에서 아래 항목을 입력합니다. 별표(*)가 붙은 항목은 필수입니다.</p>
+      <div class="tw"><table>
+        <thead><tr><th>입력 항목</th><th>필수</th><th>입력 방법</th></tr></thead>
+        <tbody>
+          <tr><td class="k">업체명</td><td><span class="req">필수</span></td><td>사업장 이름을 입력합니다.</td></tr>
+          <tr><td class="k">담당자 이름</td><td><span class="req">필수</span></td><td>실제 담당자 성함을 입력합니다.</td></tr>
+          <tr><td class="k">연락처</td><td><span class="req">필수</span></td><td>휴대전화 번호를 입력합니다. 발주 안내 문자를 받는 번호입니다.</td></tr>
+          <tr><td class="k">이메일 (로그인 ID)</td><td><span class="req">필수</span></td><td>로그인할 때 사용할 이메일 주소입니다.</td></tr>
+          <tr><td class="k">납품 받는 주소</td><td><span class="req">필수</span></td><td>우편번호 조회 버튼으로 검색합니다. 상세 주소만 직접 입력합니다.</td></tr>
+          <tr><td class="k">총판 코드</td><td><span class="opt">선택</span></td><td>담당 총판에서 받은 코드를 입력합니다. 아래 주의사항을 꼭 확인하세요.</td></tr>
+          <tr><td class="k">비밀번호</td><td><span class="req">필수</span></td><td>8자 이상으로 입력합니다.</td></tr>
+          <tr><td class="k">비밀번호 확인</td><td><span class="req">필수</span></td><td>위에 입력한 비밀번호와 똑같이 입력합니다.</td></tr>
+        </tbody>
+      </table></div>
+      <p><strong>주소는 직접 타이핑할 수 없습니다.</strong> 반드시 검색으로 입력해 주세요.</p>
+      <ul>
+        <li>우편번호 조회 버튼을 클릭합니다.</li>
+        <li><strong>주소 검색</strong> — 팝업 창에서 도로명 주소나 건물명을 검색해 선택합니다.</li>
+        <li><strong>상세 주소 입력</strong> — 동, 호수, 층 등을 직접 입력합니다.</li>
+      </ul>
+      <div class="call warn"><span class="ci">⚠️</span><div class="cc"><div class="ct">주의 · 총판 코드</div>
+        <p>총판 코드를 잘못 입력하거나 비워 두면 오류 없이 그대로 가입이 완료되지만, 담당 총판이 배정되지 않아 <strong>발주 요청 화면을 사용할 수 없습니다.</strong></p>
+        <ul>
+          <li>코드를 모르거나 확실하지 않으면 가입 전에 영업 담당자에게 먼저 확인하세요.</li>
+          <li>이미 가입한 뒤 총판이 배정되지 않았다면 영업 담당자에게 총판 배정을 요청해야 합니다.</li>
+        </ul>
+      </div></div>
+
+      
+<figure class="fig group"><div class="figrow"><img alt="로그인 화면에서 회원가입 진입" src="/open/manual-img/01.png"><img alt="회원가입 정보 입력" src="/open/manual-img/02.png"></div><figcaption>로그인 화면에서 회원가입 진입 · 회원가입 정보 입력</figcaption></figure>
+<h3 class="sub"><span class="dot"></span>2.2 전용 초대 링크로 가입하기</h3>
+      <p>총판·본사에서 전용 가입 링크를 문자로 받은 경우, 그 링크로 접속하면 신청 시 제출한 정보가 자동으로 채워집니다.</p>
+      <div class="tw"><table>
+        <thead><tr><th>구분</th><th>항목</th></tr></thead>
+        <tbody>
+          <tr><td class="k">자동 입력 (수정 불가)</td><td>업체명 · 담당자 이름 · 연락처 · 우편번호 · 도로명 주소 · 상세 주소</td></tr>
+          <tr><td class="k">직접 입력</td><td>이메일 (로그인 ID) · 총판 코드 (선택) · 비밀번호 · 비밀번호 확인</td></tr>
+        </tbody>
+      </table></div>
+      <div class="call warn"><span class="ci">⚠️</span><div class="cc"><div class="ct">주의 · 링크는 1회용</div>
+        <p>전용 가입 링크는 한 번만 사용할 수 있습니다. 이미 가입을 마친 링크로 다시 접속하면 「유효하지 않거나 이미 가입 완료된 전용 가입 링크입니다.」 라는 안내가 표시되고 가입하기 버튼이 비활성화됩니다. 이 경우 링크를 발송한 담당자에게 문의하세요.</p>
+      </div></div>
+
+      
+<figure class="fig"><img alt="전용 초대 링크 가입 화면" src="/open/manual-img/03.png"><figcaption>전용 초대 링크 가입 화면</figcaption></figure>
+<h3 class="sub"><span class="dot"></span>2.3 로그인</h3>
+      <p>가입이 완료되면 로그인 화면으로 이동하며 「가입이 완료되었습니다. 로그인하세요.」 안내가 표시됩니다. 가입한 이메일과 비밀번호로 로그인합니다.</p>
+      <div class="tw"><table>
+        <thead><tr><th>화면 안내</th><th>원인과 조치</th></tr></thead>
+        <tbody>
+          <tr><td class="k"><span class="screen">이메일 또는 비밀번호가 올바르지 않습니다.</span></td><td>입력한 정보를 다시 확인하세요.</td></tr>
+          <tr><td class="k"><span class="screen">계정이 정지되었습니다. 본사에 문의하세요.</span></td><td>계정이 정지된 상태입니다. 본사에 문의해야 합니다.</td></tr>
+        </tbody>
+      </table></div>
+    </section>
+
+    
+<figure class="fig"><img alt="로그인 화면" src="/open/manual-img/04.png"><figcaption>로그인 화면</figcaption></figure>
+<!-- 3 -->
+    <section class="doc" id="s3">
+      <div class="sec-head"><span class="num">3</span><h2 class="sec-title">화면 둘러보기</h2></div>
+      <h3 class="sub"><span class="dot"></span>3.1 사이드바 메뉴</h3>
+      <p>로그인하면 왼쪽에 메뉴가 표시됩니다. 소매점 계정에서 사용할 수 있는 메뉴는 <strong>5개</strong>입니다.</p>
+      <div class="tw"><table>
+        <thead><tr><th>메뉴</th><th>주요 기능</th></tr></thead>
+        <tbody>
+          <tr><td class="k">📊 대시보드</td><td>발주 건수 요약과 최근 발주 내역 확인</td></tr>
+          <tr><td class="k">📦 상품 리스트</td><td>취급 상품 목록과 소비자가 조회, 상품별 바로 발주</td></tr>
+          <tr><td class="k">📋 발주 관리</td><td>발주 현황 조회, 상태별 확인, 주문 상세 진입</td></tr>
+          <tr><td class="k">🚀 발주 요청</td><td>상품·수량을 선택해 총판에 발주 요청</td></tr>
+          <tr><td class="k">⚙️ 계정 설정</td><td>비밀번호 변경, 로그인 기록 확인</td></tr>
+        </tbody>
+      </table></div>
+      
+<figure class="fig"><img alt="소매점 사이드바 메뉴" src="/open/manual-img/05.png"><figcaption>소매점 사이드바 메뉴</figcaption></figure>
+<h3 class="sub"><span class="dot"></span>3.2 로그아웃</h3>
+      <p>사이드바 맨 아래의 🚪 로그아웃을 누르면 로그인 화면으로 돌아갑니다. 공용 PC를 사용했다면 반드시 로그아웃하세요.</p>
+    </section>
+
+    <!-- 4 -->
+    <section class="doc" id="s4">
+      <div class="sec-head"><span class="num">4</span><h2 class="sec-title">대시보드</h2></div>
+      <p>로그인 후 처음 보이는 화면입니다. 현재 발주 상황을 한눈에 확인할 수 있습니다.</p>
+      <h3 class="sub"><span class="dot"></span>4.1 통계 카드</h3>
+      <div class="tw"><table>
+        <thead><tr><th>카드</th><th>집계 기준</th></tr></thead>
+        <tbody>
+          <tr><td class="k">전체 발주</td><td>지금까지 요청한 전체 발주 건수</td></tr>
+          <tr><td class="k">진행 중</td><td>발주 요청 · 승인완료 · 본사접수 · 출고준비 상태인 건수</td></tr>
+          <tr><td class="k">출고 완료</td><td>출고완료 · 수령완료 · 완료 상태인 건수</td></tr>
+        </tbody>
+      </table></div>
+      <div class="call tip"><span class="ci">💡</span><div class="cc"><div class="ct">알아두세요</div>
+        <p>세 카드의 숫자를 더해도 「전체 발주」와 맞지 않을 수 있습니다. <strong>반려</strong> 상태는 「진행 중」과 「출고 완료」 어느 쪽에도 포함되지 않기 때문이며, 정상 동작입니다. 전체 내역은 발주 관리 메뉴에서 확인하세요.</p>
+      </div></div>
+
+      
+<figure class="fig"><img alt="대시보드 통계 카드" src="/open/manual-img/06.png"><figcaption>대시보드 통계 카드</figcaption></figure>
+<h3 class="sub"><span class="dot"></span>4.2 최근 발주 내역</h3>
+      <p>화면 아래쪽에 최근 5건이 최신순으로 표시됩니다. 주문번호를 클릭하면 해당 주문 상세로 이동하고, 전체 보기를 누르면 발주 관리 화면으로 이동합니다. 발주 내역이 없으면 「아직 발주 내역이 없습니다.」 라고 표시됩니다.</p>
+      <div class="call tip"><span class="ci">💡</span><div class="cc"><div class="ct">알아두세요</div>
+        <p>금액이 0원으로 표시되는 것은 총판이 아직 승인하지 않아 단가가 확정되지 않았기 때문입니다. 표시되는 금액은 부가세가 포함되지 않은 공급가액 기준입니다.</p>
+      </div></div>
+    </section>
+
+    <!-- 5 -->
+    <section class="doc" id="s5">
+      <div class="sec-head"><span class="num">5</span><h2 class="sec-title">상품 리스트 확인</h2></div>
+      <p>현재 취급 중인 전체 상품을 확인할 수 있습니다. 카테고리, 상품명 순으로 정렬되어 있습니다.</p>
+      <h3 class="sub"><span class="dot"></span>5.1 화면 구성</h3>
+      <div class="tw"><table>
+        <thead><tr><th>항목</th><th>설명</th></tr></thead>
+        <tbody>
+          <tr><td class="k">이미지</td><td>상품 사진입니다. 등록된 이미지가 없으면 「없음」으로 표시됩니다.</td></tr>
+          <tr><td class="k">상품명</td><td>상품 상세 페이지가 등록된 상품은 파란색 링크로 표시되며, 클릭하면 새 창에서 열립니다.</td></tr>
+          <tr><td class="k">카테고리</td><td>상품 분류입니다. 지정되지 않은 상품은 「-」로 표시됩니다.</td></tr>
+          <tr><td class="k">소비자가</td><td>소비자 판매가격입니다. 등록되지 않은 상품은 「-」로 표시됩니다.</td></tr>
+          <tr><td class="k">발주 요청</td><td>클릭하면 해당 상품이 선택된 상태로 발주 요청 화면이 열립니다.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="call tip"><span class="ci">💡</span><div class="cc"><div class="ct">알아두세요</div>
+        <p>상품 리스트에는 소비자가만 표시됩니다. 소매점 매입 단가는 총판이 발주를 승인한 뒤 해당 주문 상세 화면에서만 확인할 수 있습니다.</p>
+        <p>상품 리스트에는 검색창이나 카테고리 필터가 없습니다. 브라우저의 페이지 내 찾기(<span class="kbd">Ctrl</span>+<span class="kbd">F</span> / <span class="kbd">⌘</span>+<span class="kbd">F</span>)를 이용하면 편리합니다.</p>
+      </div></div>
+      
+<figure class="fig"><img alt="상품 리스트 화면" src="/open/manual-img/07.png"><figcaption>상품 리스트 화면</figcaption></figure>
+<h3 class="sub"><span class="dot"></span>5.2 상품 목록에서 바로 발주하기</h3>
+      <p>상품 행의 발주 요청 버튼을 누르면 그 상품이 이미 선택된 상태로 발주 요청 화면이 열립니다. 수량만 조정한 뒤 진행하면 됩니다.</p>
+    </section>
+
+    
+<figure class="fig"><img alt="상품 목록에서 바로 발주 요청" src="/open/manual-img/08.png"><figcaption>상품 목록에서 바로 발주 요청</figcaption></figure>
+<!-- 6 · FEATURE -->
+    <section class="doc" id="s6">
+      <div class="sec-head"><span class="num">6</span><h2 class="sec-title">발주 요청하기</h2></div>
+      <div class="feature">
+        <span class="flag">★ 이 매뉴얼의 핵심</span>
+        <p style="margin-top:-6px">소매점이 총판에 상품을 주문하는 화면입니다. 아래 6단계를 순서대로 따라 하세요.</p>
+<figure class="fig hero"><img alt="발주 요청 전체 흐름 — 메뉴 진입 → 상품·수량 선택 → 품목 담기 → 배송 정보" src="/open/manual-img/09.png"><figcaption>발주 요청 전체 흐름 — 메뉴 진입 → 상품·수량 선택 → 품목 담기 → 배송 정보</figcaption></figure>
+
+
+        <div class="steps">
+          <div class="step">
+            <div class="sl"><span class="sn">1</span>발주 요청 화면 열기</div>
+            <p>두 가지 경로가 있습니다.</p>
+            <ul>
+              <li><strong>사이드바</strong> — 🚀 발주 요청 메뉴를 클릭합니다.</li>
+              <li><strong>상품 리스트</strong> — 원하는 상품 행의 발주 요청 버튼을 클릭합니다. 해당 상품이 자동 선택됩니다.</li>
+            </ul>
+          </div>
+
+          <div class="step">
+            <div class="sl"><span class="sn">2</span>상품·옵션·수량 선택</div>
+            <ul>
+              <li><strong>상품 선택</strong> — 목록에서 주문할 상품을 고릅니다.</li>
+              <li><strong>옵션 선택</strong> — 옵션이 있는 상품은 옵션 항목이 함께 표시됩니다. 옵션이 없는 상품은 이 항목이 나타나지 않습니다.</li>
+              <li><strong>수량 입력</strong> — <span class="kbd">−</span> / <span class="kbd">+</span> 버튼이나 숫자 입력으로 조정합니다. 상품을 고르면 최소 수량(MOQ)이 자동으로 채워집니다.</li>
+              <li><strong>추가 클릭</strong> — 아래 「발주 품목」 목록에 담깁니다. 추가 후 상품·옵션 선택은 초기화됩니다.</li>
+            </ul>
+            <div class="call tip"><span class="ci">💡</span><div class="cc"><div class="ct">수량이 저절로 바뀌어요</div>
+              <p>입력한 수량이 저절로 바뀌는 것은 정상입니다. 시스템이 최소 수량(MOQ)과 발주 단위에 맞춰 자동으로 보정하기 때문입니다.</p>
+              <p>예를 들어 MOQ가 10, 발주 단위가 5인 상품에 7을 입력하면 10으로, 12를 입력하면 10으로, 13을 입력하면 15로 조정됩니다. MOQ와 발주 단위는 상품마다 다르며, 상품을 고르면 수량 옆에 「MOQ : 단위」 형태로 표시됩니다.</p>
+            </div></div>
+          </div>
+
+          <div class="step">
+            <div class="sl"><span class="sn">3</span>품목 확인 및 삭제</div>
+<figure class="fig"><img alt="발주 품목 확인·삭제" src="/open/manual-img/10.png"><figcaption>발주 품목 확인·삭제</figcaption></figure>
+
+            <p>추가한 품목은 「발주 품목」 표에 상품명과 수량으로 표시됩니다. 옵션이 있으면 상품명 뒤에 괄호로 함께 표시됩니다. 잘못 담은 품목은 오른쪽 삭제를 눌러 뺄 수 있습니다.</p>
+            <div class="call warn"><span class="ci">⚠️</span><div class="cc"><div class="ct">주의</div>
+              <p>삭제를 누르면 확인 창 없이 바로 지워집니다.</p>
+              <p>이 화면에는 가격이 표시되지 않습니다. 단가와 금액은 총판이 승인한 뒤 주문 상세에서 확인할 수 있습니다.</p>
+            </div></div>
+          </div>
+
+          <div class="step">
+            <div class="sl"><span class="sn">4</span>배송 정보 입력</div>
+<figure class="fig"><img alt="배송 정보 입력" src="/open/manual-img/11.png"><figcaption>배송 정보 입력</figcaption></figure>
+
+            <div class="tw"><table>
+              <thead><tr><th>항목</th><th>필수</th><th>설명</th></tr></thead>
+              <tbody>
+                <tr><td class="k">배송지</td><td><span class="opt">선택</span></td><td>가입 시 등록한 주소가 자동으로 입력됩니다. 다른 곳으로 받으려면 직접 수정합니다.</td></tr>
+                <tr><td class="k">희망 납기일</td><td><span class="opt">선택</span></td><td>원하는 납품 날짜가 있으면 선택합니다.</td></tr>
+                <tr><td class="k">비고</td><td><span class="opt">선택</span></td><td>총판에 전달할 요청사항을 입력합니다.</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+
+          <div class="step">
+            <div class="sl"><span class="sn">5</span>발주 요청 제출</div>
+<figure class="fig"><img alt="발주 요청 제출" src="/open/manual-img/12.png"><figcaption>발주 요청 제출</figcaption></figure>
+
+            <p>모든 입력을 마쳤으면 화면 아래 <strong>발주 요청하기</strong> 버튼을 누릅니다. 제출되면 발주 관리 목록으로 이동하며, 담당 총판에게 새 발주 요청 문자가 자동 발송됩니다.</p>
+            <div class="call warn"><span class="ci">⚠️</span><div class="cc"><div class="ct">주의</div>
+              <p>취소를 누르면 작성 중이던 내용은 저장되지 않고 이전 화면으로 돌아갑니다. 이 화면에는 임시 저장 기능이 없습니다.</p>
+              <p>제출한 발주는 소매점이 직접 취소하거나 수정할 수 없습니다. 잘못 제출했다면 담당 총판에 연락해 반려를 요청하세요.</p>
+            </div></div>
+          </div>
+
+          <div class="step">
+            <div class="sl"><span class="sn">6</span>발주 요청이 막혀 있을 때</div>
+            <p>아래 두 경우에는 상품 선택 화면이 아예 표시되지 않습니다.</p>
+            <div class="tw"><table>
+              <thead><tr><th>화면 안내</th><th>원인과 조치</th></tr></thead>
+              <tbody>
+                <tr><td class="k"><span class="screen">총판이 배정되지 않았습니다.</span></td><td>가입 시 총판 코드를 입력하지 않았거나 잘못 입력한 경우입니다. 본사에 연락해 총판 배정을 요청하세요.</td></tr>
+                <tr><td class="k"><span class="screen">주문이 제한된 상태입니다.</span></td><td>계정이 주문 제한 상태입니다. 담당 총판 또는 본사에 문의하세요.</td></tr>
+              </tbody>
+            </table></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="doc" id="s7">
+      <div class="sec-head"><span class="num">7</span><h2 class="sec-title">수령 확인과 거래명세서</h2></div>
+      <div class="steps">
+        <div class="step">
+          <div class="sl"><span class="sn">1</span>출고 안내 확인</div>
+<figure class="fig"><img alt="출고 안내 문자·주문 상세" src="/open/manual-img/13.png"><figcaption>출고 안내 문자·주문 상세</figcaption></figure>
+
+          <p>상품이 출고되면 등록된 연락처로 출고 안내 문자가 발송됩니다. 문자에는 송장번호와 택배사가 함께 안내되며, 주문 상세 화면에서도 같은 내용을 확인할 수 있습니다.</p>
+        </div>
+        <div class="step">
+          <div class="sl"><span class="sn">2</span>수령 확인 누르기</div>
+<figure class="fig"><img alt="수령 확인 버튼" src="/open/manual-img/14.png"><figcaption>수령 확인 버튼</figcaption></figure>
+
+          <p>상품을 실제로 받은 뒤, 주문 상세 화면 아래의 <strong>수령 확인</strong> 버튼을 누릅니다. 주문 상태가 수령완료로 바뀝니다.</p>
+          <div class="call warn"><span class="ci">⚠️</span><div class="cc"><div class="ct">주의</div>
+            <p>수령 확인은 확인 창 없이 누르는 즉시 처리되며, 소매점이 되돌릴 수 없습니다. 상품과 수량을 모두 확인한 뒤에 누르세요. 문제가 있으면 누르기 전에 담당 총판에 먼저 연락하세요.</p>
+          </div></div>
+        </div>
+        <div class="step">
+          <div class="sl"><span class="sn">3</span>거래명세서 인쇄</div>
+<figure class="fig"><img alt="거래명세서 인쇄 화면" src="/open/manual-img/15.png"><figcaption>거래명세서 인쇄 화면</figcaption></figure>
+
+          <p>수령 확인이 끝나면 주문 상세 아래에 거래명세서 인쇄 버튼이 나타납니다. 버튼을 누르면 새 창이 열리고 인쇄 화면이 자동으로 실행됩니다.</p>
+          <p>거래명세서에는 주문번호, 발주일, 배송지와 함께 품목별 상품 · 옵션 · 수량 · 단가 · 금액이 표시되고, 아래에 공급가액 · 부가세 (10%) · 합계와 한글 금액이 인쇄됩니다.</p>
+          <div class="call warn"><span class="ci">⚠️</span><div class="cc"><div class="ct">주의 · 팝업 차단</div>
+            <p>브라우저가 팝업을 차단하면 인쇄 창이 열리지 않습니다. 주소창 오른쪽의 팝업 차단 안내를 눌러 이 사이트의 팝업을 허용한 뒤 다시 시도하세요.</p>
+          </div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 FAQ -->
+    <section class="doc" id="s8">
+      <div class="sec-head"><span class="num">8</span><h2 class="sec-title">자주 묻는 질문</h2></div>
+      <div class="tw"><table>
+        <thead><tr><th>이런 경우</th><th>이렇게 하세요</th></tr></thead>
+        <tbody>
+          <tr><td class="k">발주 요청 화면에 <span class="screen">총판이 배정되지 않았습니다.</span> 가 나옵니다.</td><td>가입 시 총판 코드가 입력되지 않았거나 잘못된 코드입니다. 본사에 연락해 총판 배정을 요청하세요.</td></tr>
+          <tr><td class="k"><span class="screen">주문이 제한된 상태입니다.</span> 가 나옵니다.</td><td>계정이 주문 제한 상태입니다. 담당 총판 또는 본사에 문의하세요.</td></tr>
+          <tr><td class="k">로그인할 때 <span class="screen">계정이 정지되었습니다.</span> 가 나옵니다.</td><td>계정이 정지된 상태입니다. 본사에 문의하세요.</td></tr>
+          <tr><td class="k">입력한 수량이 저절로 다른 숫자로 바뀝니다.</td><td>최소 수량(MOQ)과 발주 단위에 맞춰 자동으로 보정된 것입니다. 정상 동작입니다.</td></tr>
+          <tr><td class="k">단가가 계속 <span class="screen">견적 대기</span> 로 표시됩니다.</td><td>총판이 아직 승인하지 않은 상태입니다. 승인되면 단가와 금액이 표시됩니다.</td></tr>
+          <tr><td class="k">대시보드 금액이 0원으로 나옵니다.</td><td>승인 전에는 금액이 확정되지 않습니다. 승인 후 다시 확인하세요.</td></tr>
+          <tr><td class="k">통계 카드 세 숫자의 합이 전체 발주와 다릅니다.</td><td>반려는 어느 카드에도 포함되지 않습니다. 정상 동작입니다.</td></tr>
+          <tr><td class="k">거래명세서 창이 열리지 않습니다.</td><td>브라우저 팝업 차단을 해제한 뒤 다시 시도하세요.</td></tr>
+          <tr><td class="k">주문을 잘못 넣었습니다.</td><td>소매점은 제출한 주문을 취소·수정할 수 없습니다. 담당 총판에 연락해 반려를 요청하세요.</td></tr>
+          <tr><td class="k">상품을 이름으로 찾고 싶습니다.</td><td>상품 리스트에는 검색 기능이 없습니다. 브라우저의 페이지 내 찾기(<span class="kbd">Ctrl</span>+<span class="kbd">F</span> / <span class="kbd">⌘</span>+<span class="kbd">F</span>)를 이용하세요.</td></tr>
+          <tr><td class="k">발주 관리 목록에서 특정 주문이 보이지 않습니다.</td><td>본사접수·출고준비·수령완료 상태는 필터 버튼이 없습니다. 「전체」에서 확인하세요.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="shot"><span class="si">📸</span><div><strong>[화면 캡처 자리]</strong> 오류 화면 모음 — 총판 미배정 / 주문 제한 / 계정 정지 <br><span style="font-size:.85em">※ 이 자리에 화면 캡처 이미지를 넣어 주세요.</span></div></div>
+    </section>
+
+    <!-- Appendix A -->
+    <section class="doc" id="a">
+      <div class="sec-head"><span class="num">A</span><h2 class="sec-title">부록 A · 주문 상태 참조표</h2></div>
+      <p>주문 상태별 화면 표시명과 소매점이 할 일을 정리한 표입니다.</p>
+      <div class="tw"><table>
+        <thead><tr><th>화면 표시명</th><th>뜻</th><th>소매점 행동</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge b-order">발주 요청</span></td><td>총판이 확인 중입니다.</td><td>기다립니다.</td></tr>
+          <tr><td><span class="badge b-approved">승인완료</span></td><td>총판이 발주를 승인했습니다.</td><td>단가와 금액이 공개됩니다. 확인만 하면 됩니다.</td></tr>
+          <tr><td><span class="badge b-reject">반려</span></td><td>총판이 발주를 반려했습니다.</td><td>주문 상세의 「비고」에서 반려 사유를 확인합니다.</td></tr>
+          <tr><td><span class="badge b-hq">본사접수</span></td><td>본사가 주문을 접수했습니다.</td><td>기다립니다.</td></tr>
+          <tr><td><span class="badge b-prep">출고준비</span></td><td>출고를 준비 중입니다.</td><td>기다립니다.</td></tr>
+          <tr><td><span class="badge b-shipped">출고완료</span></td><td>상품이 출고되었습니다.</td><td>문자와 주문 상세에서 송장번호를 확인합니다.</td></tr>
+          <tr><td><span class="badge b-delivered">수령완료</span></td><td>수령 확인이 끝났습니다.</td><td>거래명세서를 인쇄할 수 있습니다.</td></tr>
+          <tr><td><span class="badge b-done">완료</span></td><td>모든 절차가 끝났습니다.</td><td>별도 조치 없음</td></tr>
+        </tbody>
+      </table></div>
+      <div class="call tip"><span class="ci">💡</span><div class="cc"><div class="ct">알아두세요</div>
+        <p>목록의 상태 필터에는 「견적 작성 중」 · 「견적 발송」 · 「발주 확정」 버튼도 있지만, 현재 발주 요청 방식에서는 이 상태를 거치지 않습니다.</p>
+      </div></div>
+    </section>
+
+    <!-- Appendix B -->
+    <section class="doc" id="b">
+      <div class="sec-head"><span class="num">B</span><h2 class="sec-title">부록 B · 문자(SMS) 안내</h2></div>
+      <p>가입 시 등록한 연락처로 아래 시점에 안내 문자가 발송됩니다.</p>
+      <div class="tw"><table>
+        <thead><tr><th>시점</th><th>안내 내용</th></tr></thead>
+        <tbody>
+          <tr><td class="k">본사 접수</td><td>발주가 본사에 접수되었음을 안내합니다.</td></tr>
+          <tr><td class="k">출고</td><td>상품이 출고되었음을 안내합니다. 송장번호와 택배사가 함께 표시됩니다.</td></tr>
+          <tr><td class="k">수령 확인</td><td>수령 확인이 처리되었음을 안내합니다.</td></tr>
+        </tbody>
+      </table></div>
+      <div class="call tip"><span class="ci">💡</span><div class="cc"><div class="ct">알아두세요</div>
+        <p>발주 요청을 제출한 시점과 총판이 승인한 시점의 문자는 총판·본사에게만 발송되며, 소매점에는 발송되지 않습니다. 이때는 발주 관리 화면에서 직접 상태를 확인하세요.</p>
+      </div></div>
+    </section>
+
+    <!-- Appendix C -->
+    <section class="doc" id="c">
+      <div class="sec-head"><span class="num">C</span><h2 class="sec-title">부록 C · 문의처</h2></div>
+      <p>시스템 사용 중 문의사항은 아래로 연락해 주세요.</p>
+      <div class="card prose-card">
+        <div class="contact">
+          <div class="row"><span class="cl">본사 담당자</span><span class="cv">김시열 · 010-9961-4937</span></div>
+          <div class="row"><span class="cl">총판 담당자</span><span class="cv">경기열쇠 김동수 · 010-2245-2222</span></div>
+          <div class="row"><span class="cl">이메일</span><span class="cv"><a href="mailto:siyeol@aqara.kr">siyeol@aqara.kr</a></span></div>
+          <div class="row"><span class="cl">홈페이지</span><span class="cv"><a href="https://aqaralife.shop" target="_blank" rel="noopener">aqaralife.shop</a></span></div>
+        </div>
+      </div>
+      <p class="contact cta-note">📞 문의해 주시면 담당자가 확인 후 안내드리겠습니다.</p>
+    </section>
+  </main>
+</div>
+
+<footer>Aqara Distro · 소매점 빠른 시작 매뉴얼 · Quick Start Guide for Retailers</footer>
+
+<script>
+(function(){
+  var root=document.documentElement;
+  // theme toggle
+  var btn=document.getElementById('themeBtn');
+  function cur(){ return root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'); }
+  try{ var saved=localStorage.getItem('aqara-manual-theme'); if(saved) root.setAttribute('data-theme',saved); }catch(e){}
+  btn.addEventListener('click',function(){
+    var next=cur()==='dark'?'light':'dark';
+    root.setAttribute('data-theme',next);
+    try{ localStorage.setItem('aqara-manual-theme',next); }catch(e){}
+  });
+
+  // mobile TOC toggle
+  var sb=document.getElementById('sidebar'), head=document.getElementById('tocHead');
+  head.addEventListener('click',function(){ sb.classList.toggle('open'); });
+  document.getElementById('toc').addEventListener('click',function(e){
+    if(e.target.closest('a') && window.matchMedia('(max-width:900px)').matches){ sb.classList.remove('open'); }
+  });
+
+  // scroll spy
+  var links=Array.prototype.slice.call(document.querySelectorAll('#toc a'));
+  var map={}; links.forEach(function(a){ map[a.getAttribute('href').slice(1)]=a; });
+  var secs=Array.prototype.slice.call(document.querySelectorAll('section.doc'));
+  var io=new IntersectionObserver(function(entries){
+    entries.forEach(function(en){
+      if(en.isIntersecting){
+        links.forEach(function(a){a.classList.remove('active');});
+        var a=map[en.target.id]; if(a) a.classList.add('active');
+      }
+    });
+  },{rootMargin:'-45% 0px -50% 0px',threshold:0});
+  secs.forEach(function(s){io.observe(s);});
+})();
+</script>
