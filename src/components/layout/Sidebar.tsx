@@ -22,6 +22,7 @@ const NAV_ITEMS: Record<string, NavItem[]> = {
     // { label: '견적 요청', href: '/retailer/orders/new', icon: '📝' },
     { label: '발주 요청', href: '/retailer/orders/new-direct', icon: '🚀' },
     { label: '계정 설정', href: '/retailer/settings', icon: '⚙️' },
+    { label: '사용 설명서', href: '/open/manual', icon: '📖', external: true },
   ],
   distributor: [
     { label: '대시보드', href: '/distributor/dashboard', icon: '📊' },

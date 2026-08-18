@@ -1,3 +1,9 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>소매점 발주 매뉴얼</title>
 <style>
   :root{
@@ -232,7 +238,24 @@
   figure.fig .figrow img{max-height:520px}
   figure.fig figcaption{margin-top:9px;font-size:.8rem;color:var(--ink-faint);letter-spacing:.01em}
   figure.hero img{max-height:none;border-color:color-mix(in srgb,var(--accent) 30%,var(--line))}
+
+  /* ── 모바일 표 가독성: 잘림/여백 방지 ── */
+  @media (max-width:680px){
+    .tw{border-radius:12px}
+    table{min-width:0}
+    th,td{padding:9px 11px}
+    thead th,td.k{white-space:normal}
+    td .req,td .opt{white-space:nowrap}
+    .screen{white-space:normal;word-break:keep-all}
+    .top-inner{padding:26px 18px 24px}
+    .wrap{padding:0 16px}
+    .sidebar{margin:0 -16px}
+    h1.title{font-size:1.7rem}
+    .feature{padding:6px 14px 18px}
+  }
 </style>
+</head>
+<body>
 
 <header class="top">
   <div class="top-inner">
@@ -686,3 +709,5 @@
   secs.forEach(function(s){io.observe(s);});
 })();
 </script>
+</body>
+</html>
