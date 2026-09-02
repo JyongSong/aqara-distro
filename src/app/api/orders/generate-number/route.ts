@@ -15,15 +15,22 @@ export async function GET() {
   const d = now.getUTCDate().toString().padStart(2, '0')
   const datePrefix = `ORD-${y}${m}${d}-`
 
-  const { count, error } = await supabase
+  // 가장 큰 기존 번호 + 1 (count 기반은 삭제/공백 시 기존 번호와 충돌하므로 사용하지 않는다)
+  const { data: last, error } = await supabase
     .from('orders')
-    .select('*', { count: 'exact', head: true })
+    .select('order_number')
     .like('order_number', `${datePrefix}%`)
+    .order('order_number', { ascending: false })
+    .limit(1)
+    .maybeSingle()
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const seq = ((count ?? 0) + 1).toString().padStart(4, '0')
+  const lastSeq = last
+    ? parseInt(last.order_number.slice(datePrefix.length), 10) || 0
+    : 0
+  const seq = (lastSeq + 1).toString().padStart(4, '0')
   return NextResponse.json({ order_number: `${datePrefix}${seq}` })
 }
