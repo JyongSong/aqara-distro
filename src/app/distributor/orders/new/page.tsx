@@ -391,7 +391,15 @@ export default function DistributorNewOrderPage() {
       {/* 배송 정보 */}
       {lines.length > 0 && !showPreview && (
         <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">배송 정보</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">배송 정보</h2>
+          <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-xs leading-relaxed text-blue-900">
+            <p className="font-semibold mb-1">📦 출고 안내</p>
+            <ul className="space-y-0.5">
+              <li className="flex gap-1.5"><span aria-hidden>•</span><span>영업일 <span className="font-semibold">오전 11:30 이전</span> 발주 건 → 당일 출고</span></li>
+              <li className="flex gap-1.5"><span aria-hidden>•</span><span>11:30 이후 · 주말/공휴일 발주 건 → 익영업일 출고</span></li>
+              <li className="flex gap-1.5"><span aria-hidden>•</span><span>출고되면 <span className="font-semibold">송장번호를 문자로 안내</span>드립니다. (한진택배, 수령까지 1~2일 소요)</span></li>
+            </ul>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">배송지</label>
