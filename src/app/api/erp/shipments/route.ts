@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getErpPool } from '@/lib/erp'
 import { requireRole } from '@/lib/api-auth'
+import { createAdminClient } from '@/lib/supabase/admin'
+import type { BoxIds } from '@/lib/box-ids'
 import sql from 'mssql'
 
 export async function GET(req: NextRequest) {
@@ -106,7 +108,24 @@ export async function GET(req: NextRequest) {
       }
     })
 
-    return NextResponse.json({ data })
+    // 박스 ID: 온라인주문번호로 orders.box_ids 조회
+    const orderNumbers = [...new Set(data.map(r => r.online_order_no).filter((v): v is string => !!v))]
+    const boxIdsByOrder = new Map<string, BoxIds | null>()
+    if (orderNumbers.length > 0) {
+      const { data: orders, error: ordersError } = await createAdminClient()
+        .from('orders')
+        .select('order_number, box_ids')
+        .in('order_number', orderNumbers)
+      if (ordersError) console.error('[ERP shipments] box_ids 조회 실패:', ordersError)
+      for (const o of orders ?? []) boxIdsByOrder.set(o.order_number, o.box_ids as BoxIds | null)
+    }
+
+    return NextResponse.json({
+      data: data.map(r => ({
+        ...r,
+        box_ids: r.online_order_no ? boxIdsByOrder.get(r.online_order_no) ?? null : null,
+      })),
+    })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'ERP 연결 실패'
     console.error('[ERP shipments]', err)

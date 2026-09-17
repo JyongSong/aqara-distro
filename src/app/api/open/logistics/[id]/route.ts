@@ -77,17 +77,14 @@ export async function PATCH(
     cleanedBoxIds.L100 = l100Ids
   }
 
+  // 박스 ID만 저장. 출고 완료(SHIPPED) 전환은 cron/sync-shipments 가 송장번호 + 박스 ID 확인 후 처리
   const { data, error } = await supabase
     .from('orders')
-    .update({
-      status: 'SHIPPED',
-      shipped_at: new Date().toISOString(),
-      box_ids: cleanedBoxIds,
-    })
+    .update({ box_ids: cleanedBoxIds })
     .eq('id', id)
     .eq('status', 'PREPARING')
-    .select('id, order_number, status, shipped_at')
-    .single()
+    .select('id, order_number, status, box_ids')
+    .maybeSingle()
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
@@ -95,7 +92,7 @@ export async function PATCH(
 
   if (!data) {
     return NextResponse.json(
-      { error: 'Order not found or already shipped' },
+      { error: 'Order not found or not in PREPARING status' },
       { status: 404 }
     )
   }

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { getActiveBoxTypes, getRequiredBoxTypes, hasRequiredBoxIds, type BoxIds } from '@/lib/box-ids'
 
 export async function GET() {
   const supabase = createClient(
@@ -8,12 +9,7 @@ export async function GET() {
   )
 
   // 1. 물류 설정 조회
-  const { data: settingsData } = await supabase
-    .from('system_settings')
-    .select('value')
-    .eq('key', 'logistics_sn_items')
-    .single()
-  const activeItems: string[] = (settingsData?.value as string[]) ?? ['K100', 'L100']
+  const activeItems = await getActiveBoxTypes(supabase)
 
   // PREPARING 상태이고 fulfillment_type이 distributor가 아닌 주문 조회
   const { data: orders, error } = await supabase
@@ -23,6 +19,7 @@ export async function GET() {
       order_number,
       shipping_address,
       created_at,
+      box_ids,
       retailer:users_profile!retailer_id(company_name, phone),
       order_items(
         quantity,
@@ -37,7 +34,7 @@ export async function GET() {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // JS에서 설정된 일련번호 기록 대상 품목이 포함된 주문만 필터링
+  // JS에서 설정된 일련번호 기록 대상 품목이 포함되어 있고, 박스 ID가 아직 등록되지 않은 주문만 필터링
   type RawItem = {
     quantity: number
     product: { name: string; product_code: string } | null
@@ -48,16 +45,18 @@ export async function GET() {
     order_number: string
     shipping_address: string | null
     created_at: string
+    box_ids: BoxIds | null
     retailer: { company_name: string; phone: string | null } | null
     order_items: RawItem[]
   }
 
-  const filtered = ((orders ?? []) as unknown as RawOrder[]).filter((order) =>
-    order.order_items.some((item) => {
-      const code = item.product?.product_code ?? ''
-      return activeItems.some(itemType => new RegExp(itemType, 'i').test(code))
-    })
-  )
+  const filtered = ((orders ?? []) as unknown as RawOrder[]).filter((order) => {
+    const required = getRequiredBoxTypes(
+      activeItems,
+      order.order_items.map((item) => item.product?.product_code ?? '')
+    )
+    return required.length > 0 && !hasRequiredBoxIds(order.box_ids, required)
+  })
 
   // 응답 형태 정제
   const result = filtered.map((order) => {

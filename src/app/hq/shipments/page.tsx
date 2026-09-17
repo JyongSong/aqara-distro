@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import type { BoxIds } from '@/lib/box-ids'
 
 type ShipmentRow = {
   req_no: string
@@ -19,6 +20,11 @@ type ShipmentRow = {
   delivery_method: string | null
   recipient_name: string | null
   partner_name: string
+  box_ids: BoxIds | null
+}
+
+function flattenBoxIds(boxIds: BoxIds | null): string[] {
+  return [...(boxIds?.K100 ?? []), ...(boxIds?.L100 ?? [])]
 }
 
 function getDefaultDates() {
@@ -141,11 +147,13 @@ export default function HQShipmentsPage() {
                     <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">상태</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">수취인</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">송장번호</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">박스ID</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row, i) => {
                     const isDone = row.qty_pending === 0 && row.qty_shipped > 0
+                    const boxIdList = flattenBoxIds(row.box_ids)
                     return (
                       <tr key={i} className={cn(
                         'border-b border-gray-50 hover:bg-gray-50',
@@ -174,6 +182,12 @@ export default function HQShipmentsPage() {
                             : <span className="text-gray-300">-</span>
                           }
                         </td>
+                        <td className="px-4 py-3 text-sm">
+                          {boxIdList.length > 0
+                            ? <span className="font-mono text-gray-700 whitespace-pre-line">{boxIdList.join('\n')}</span>
+                            : <span className="text-gray-300">-</span>
+                          }
+                        </td>
                       </tr>
                     )
                   })}
@@ -186,6 +200,7 @@ export default function HQShipmentsPage() {
               {rows.map((row, i) => {
                 const isDone = row.qty_pending === 0 && row.qty_shipped > 0
                 const trackingList = row.tracking_no ? row.tracking_no.split('\n').filter(Boolean) : []
+                const boxIdList = flattenBoxIds(row.box_ids)
                 return (
                   <div key={i} className={cn('px-4 py-3', isDone && 'bg-green-50')}>
                     {/* 품목명 + 상태 */}
@@ -223,6 +238,17 @@ export default function HQShipmentsPage() {
                         {trackingList.map((no, j) => (
                           <span key={j} className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 border border-blue-100 rounded text-xs font-mono text-blue-700">
                             📦 {no}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 박스ID chips */}
+                    {boxIdList.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {boxIdList.map((id, j) => (
+                          <span key={j} className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-50 border border-gray-200 rounded text-xs font-mono text-gray-700">
+                            🏷️ {id}
                           </span>
                         ))}
                       </div>

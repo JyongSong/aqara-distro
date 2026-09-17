@@ -231,10 +231,10 @@ function OrderCard({
             }`}
           >
             {submitted
-              ? '✅ 출고 완료'
+              ? '✅ 박스 ID 등록 완료 · 송장번호 확인 후 자동 출고'
               : submitting
               ? '처리 중...'
-              : '출고 확정'}
+              : '박스 ID 등록'}
           </button>
         </div>
       )}
@@ -341,9 +341,9 @@ export default function LogisticsPage() {
       setTimeout(() => {
         setOrders((prev) => prev.filter((o) => o.id !== orderId))
         setExpandedId((prev) => (prev === orderId ? null : prev))
-      }, 1200)
+      }, 2000)
     } catch (e) {
-      alert(e instanceof Error ? e.message : '출고 처리 중 오류가 발생했습니다.')
+      alert(e instanceof Error ? e.message : '박스 ID 등록 중 오류가 발생했습니다.')
     } finally {
       setSubmittingId(null)
     }
